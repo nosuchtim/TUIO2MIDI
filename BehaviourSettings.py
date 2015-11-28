@@ -1,4 +1,5 @@
-﻿import time
+﻿import os
+import time
 import json
 
 from Scale import *
@@ -7,7 +8,7 @@ from nosuch.midipypm import *
 
 class BehaviourSettings(object):    # inherit from object, make it a newstyle class
 
-	def __init__(self, j=None, fname=None):
+	def __init__(self, fname=None, j=None):
 		if fname:
 			try:
 				f = open(fname)
@@ -23,6 +24,7 @@ class BehaviourSettings(object):    # inherit from object, make it a newstyle cl
 
 		if j:
 			self.enabled = j["enabled"]
+			self.attribute = j["attribute"]
 			self.activemin = j["activemin"]
 			self.activemax = j["activemax"]
 			self.pitchmin = j["pitchmin"]
@@ -36,7 +38,24 @@ class BehaviourSettings(object):    # inherit from object, make it a newstyle cl
 			self.quant = j["quant"]
 			self.velocity = j["velocity"]
 
-	def write_file(self,fname):
+	@staticmethod
+	def settings_dirname(settingsname):
+		return "Settings_%s" % (settingsname)
+
+	@staticmethod
+	def behaviour_filename(settingsname,behaviourname):
+		return "%s/%s.json" % (BehaviourSettings.settings_dirname(settingsname),behaviourname)
+
+	def write_behaviour(self,settingsname,behaviourname):
+		# Make sure directory exists
+		dn = BehaviourSettings.settings_dirname(settingsname)
+		try:
+			os.stat(dn)
+		except:
+			# directory doesn't exist, probably
+			os.mkdir(dn)
+
+		fname = self.behaviour_filename(settingsname,behaviourname)
 		try:
 			f = open(fname,"w")
 			if not f:
@@ -44,6 +63,7 @@ class BehaviourSettings(object):    # inherit from object, make it a newstyle cl
 				return
 			f.write("{\n")
 			f.write("\"enabled\":%d,\n" % self.enabled)
+			f.write("\"attribute\":\"%s\",\n" % self.attribute)
 			f.write("\"activemin\":%d,\n" % self.activemin)
 			f.write("\"activemax\":%d,\n" % self.activemax)
 			f.write("\"pitchmin\":%d,\n" % self.pitchmin)

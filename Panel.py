@@ -1,14 +1,18 @@
-﻿try:
+﻿import sys
+import os
+
+try:
 	from PySide import QtCore, QtGui
 except ImportError:
 	from PyQt4 import QtCore, QtGui
 
+from Attribute import *
+from Duration import *
 from Scale import *
 from BehaviourLogic import *
 from BehaviourSettings import *
 from Key import *
 from Quant import *
-from Duration import *
 
 class HelpPopup(QtGui.QWidget):
 
@@ -84,12 +88,15 @@ class HelpPopup(QtGui.QWidget):
 
 class Panel(QtGui.QGroupBox):
 
-	def __init__(self,player):
+	def __init__(self,player,settingsname):
 		super(Panel, self).__init__("")
 
-		self.settings = BehaviourSettings()
+		self.write_file_onchange = False
+		self.currbehaviour = None
+		self.panelsettings = BehaviourSettings()
 		self.player = player
 		self.helpwindow = None
+		self.settingsname = settingsname
 
 		self.label_top = self.just_label("")
 
@@ -102,15 +109,26 @@ class Panel(QtGui.QGroupBox):
 		self.label_title.setAlignment(QtCore.Qt.AlignHCenter)
 		# self.label_title.setAlignment(QtCore.Qt.AlignVCenter)
 
+		self.label_settingsname = self.just_label("Settings")
+		self.spinbox_settingsname = QtGui.QLineEdit()
+		self.spinbox_settingsname.textChanged.connect(self.change_settingsname)
+		self.spinbox_settingsname.setText(settingsname)
+
 		self.label_tuioport = self.just_label("TUIO Port")
 		self.spinbox_tuioport = QtGui.QSpinBox()
 		self.spinbox_tuioport.setRange(3333, 9999)
 		self.spinbox_tuioport.setSingleStep(1)
 		self.spinbox_tuioport.valueChanged[int].connect(self.change_tuioport)
 
+		self.label_attribute = self.just_label("Attribute")
+		self.combo_attribute = QtGui.QComboBox()
+		for s in Attribute.order:
+			self.combo_attribute.addItem(s)
+		self.combo_attribute.activated[str].connect(self.change_attribute)
+
 		self.label_scale = self.just_label("Scale")
 		self.combo_scale = QtGui.QComboBox()
-		for s in Scale.list:
+		for s in Scale.order:
 			self.combo_scale.addItem(s)
 		self.combo_scale.activated[str].connect(self.change_scale)
 
@@ -134,7 +152,7 @@ class Panel(QtGui.QGroupBox):
 
 		self.label_behaviour = self.just_label("Behaviour")
 		self.combo_behaviour = QtGui.QComboBox()
-		for i in Behaviours:
+		for i in self.player.behaviournames:
 			self.combo_behaviour.addItem(i)
 		self.combo_behaviour.activated[str].connect(self.change_behaviour)
 
@@ -153,11 +171,10 @@ class Panel(QtGui.QGroupBox):
 		self.combo_midiout.activated[str].connect(self.change_midiout)
 
 		self.label_thresh = self.just_label("Threshold")
-		self.spinbox_thresh = QtGui.QDoubleSpinBox()
-		self.spinbox_thresh.setRange(0.0, 0.1)
-		self.spinbox_thresh.setSingleStep(0.01)
-		self.spinbox_thresh.setDecimals(2)
-		self.spinbox_thresh.valueChanged[float].connect(self.change_threshold)
+		self.spinbox_thresh = QtGui.QSpinBox()
+		self.spinbox_thresh.setRange(0, 100)
+		self.spinbox_thresh.setSingleStep(1)
+		self.spinbox_thresh.valueChanged.connect(self.change_threshold)
 
 		self.label_velocity = self.just_label("Velocity")
 		self.spinbox_velocity = QtGui.QSpinBox()
@@ -229,6 +246,11 @@ class Panel(QtGui.QGroupBox):
 
 		row += 1
 
+		layout.addWidget(self.label_settingsname, row, 1, 1, 1)
+		layout.addWidget(self.spinbox_settingsname, row, 2, 1, 1)
+
+		row += 1
+
 		layout.addWidget(self.label_tuioport, row, 1, 1, 1)
 		layout.addWidget(self.spinbox_tuioport, row, 2, 1, 1)
 
@@ -248,16 +270,16 @@ class Panel(QtGui.QGroupBox):
 		layout.addWidget(self.combo_behaviour, row, 2, 1, 1)
 
 		row += 1
+		layout.addWidget(self.label_attribute, row, 1, 1, 1)
+		layout.addWidget(self.combo_attribute, row, 2, 1, 1)
+
+		row += 1
 		layout.addWidget(self.label_enabled, row, 1, 1, 1)
 		layout.addWidget(self.checkbox_enabled, row, 2, 1, 1)
 
 		row += 1
 		layout.addWidget(self.label_channel, row, 1, 1, 1)
 		layout.addWidget(self.spinbox_channel, row, 2, 1, 1)
-
-		row += 1
-		layout.addWidget(self.label_isscaled, row, 1, 1, 1)
-		layout.addWidget(self.checkbox_isscaled, row, 2, 1, 1)
 
 		row += 1
 		layout.addWidget(self.label_activemin, row, 1, 1, 1)
@@ -274,6 +296,10 @@ class Panel(QtGui.QGroupBox):
 		row += 1
 		layout.addWidget(self.label_pitchmax, row, 1, 1, 1)
 		layout.addWidget(self.spinbox_pitchmax, row, 2, 1, 1)
+
+		row += 1
+		layout.addWidget(self.label_isscaled, row, 1, 1, 1)
+		layout.addWidget(self.checkbox_isscaled, row, 2, 1, 1)
 
 		row += 1
 		layout.addWidget(self.label_scale, row, 1, 1, 1)
@@ -325,32 +351,44 @@ class Panel(QtGui.QGroupBox):
 	def set_message(self, msg):
 		self.label_message.setText(msg)
 
+	def change_settingsname(self, val):
+		self.settingsname = str(val)
+		if self.currbehaviour:
+			self.change_behaviour(self, self.currbehaviour, True)
+
 	def change_tuioport(self, val):
-		print "Panel.change_tuioport val=",val
+		# print "Panel.change_tuioport val=",val
 		self.spinbox_tuioport.setValue(val)
 		self.player.set_tuioport(val)
 
 	####### Behaviour
 
 	def change_behaviour(self, val, gui=True):
-		print "Panel.change_behaviour=",val," gui=",gui
-		fn = "%s.json" % val
-		self.settings = BehaviourSettings(fname=fn)
-		self.applySettings(self.settings,gui=gui)
+		# print "Panel.change_behaviour=",val," gui=",gui
+		val = str(val)
+		self.currbehaviour = val
+		fname = BehaviourSettings.behaviour_filename(self.settingsname,val)
+		self.panelsettings = BehaviourSettings(fname)
+		self.applySettings(self.panelsettings,gui=gui)
+		self.player.behaviours[val].settings = self.panelsettings
+
 		if gui:
 			for ix in range(0, self.combo_behaviour.count()):
 				if val == self.combo_behaviour.itemText(ix):
-					print "Found behaviour ix=",ix," val=",val
+					# print "Found behaviour ix=",ix," val=",val
 					self.combo_behaviour.setCurrentIndex(ix)
 					break
-		self.currbehaviour = val
 
 	def write_settings(self):
-		bn = self.combo_behaviour.currentText()
-		fn = "%s.json" % bn
-		self.settings.write_file(fn)
+		# we want to write self.panelsettings
+		if not self.write_file_onchange:
+			return
+		bn = str(self.combo_behaviour.currentText())
+		self.player.behaviours[bn].settings = self.panelsettings
+		self.panelsettings.write_behaviour(self.settingsname,bn)
 
 	def applySettings(self,s,gui):
+		self.change_attribute(s.attribute,gui)
 		self.change_activemin(s.activemin,gui)
 		self.change_activemax(s.activemax,gui)
 		self.change_pitchmin(s.pitchmin,gui)
@@ -398,8 +436,9 @@ class Panel(QtGui.QGroupBox):
 	####### Duration
 
 	def change_duration(self, val, gui=True):
-		self.player.set_duration(str(val))
-		self.settings.duration = str(val)
+		val = str(val)
+		self.player.set_duration(val)
+		self.panelsettings.duration = val
 		if gui:
 			for ix in range(0, self.combo_duration.count()):
 				if val == self.combo_duration.itemText(ix):
@@ -410,8 +449,9 @@ class Panel(QtGui.QGroupBox):
 	####### Quant
 
 	def change_quant(self, val, gui=True):
-		self.player.set_quant(str(val))
-		self.settings.quant = str(val)
+		val = str(val)
+		self.player.set_quant(val)
+		self.panelsettings.quant = val
 		if gui:
 			for ix in range(0, self.combo_quant.count()):
 				if val == self.combo_quant.itemText(ix):
@@ -421,9 +461,14 @@ class Panel(QtGui.QGroupBox):
 
 	####### Scale
 
+	def update_scalenotes(self):
+		self.player.behaviours[self.currbehaviour].update_scalenotes()
+
 	def change_scale(self, val, gui=True):
-		self.player.set_scale(str(val))
-		self.settings.scale = str(val)
+		val = str(val)
+		self.player.set_scale(val)
+		self.panelsettings.scale = val
+		self.update_scalenotes()
 		if gui:
 			for ix in range(0, self.combo_scale.count()):
 				if val == self.combo_scale.itemText(ix):
@@ -434,18 +479,34 @@ class Panel(QtGui.QGroupBox):
 	####### Key
 
 	def change_key(self, val, gui=True):
+		val = str(val)
 		self.player.set_key(val)
-		self.settings.key = val
+		self.panelsettings.key = val
+		self.update_scalenotes()
 		if gui:
 			ix = Key.names.index(val)
 			self.combo_key.setCurrentIndex(ix)
 			self.write_settings()
 
+	####### Attribute
+
+	def change_attribute(self, val, gui=True):
+		val = str(val)
+		self.player.set_attribute(val)
+		self.panelsettings.attribute = val
+		if self.currbehaviour:
+			self.player.behaviours[self.currbehaviour].settings = self.panelsettings
+		if gui:
+			for ix in range(0, self.combo_attribute.count()):
+				if val == self.combo_attribute.itemText(ix):
+					self.combo_attribute.setCurrentIndex(ix)
+					self.write_settings()
+
 	####### Threshold
 
 	def change_threshold(self, val, gui=True):
 		self.player.set_threshold(val)
-		self.settings.threshold = val
+		self.panelsettings.threshold = val
 		if gui:
 			self.spinbox_thresh.setValue(val)
 			self.write_settings()
@@ -454,7 +515,7 @@ class Panel(QtGui.QGroupBox):
 
 	def change_velocity(self, val, gui=True):
 		self.player.set_velocity(val)
-		self.settings.velocity = val
+		self.panelsettings.velocity = val
 		if gui:
 			self.spinbox_velocity.setValue(val)
 			self.write_settings()
@@ -463,7 +524,7 @@ class Panel(QtGui.QGroupBox):
 
 	def change_enabled(self, val, gui=True):
 		self.player.set_enabled(val)
-		self.settings.enabled = val
+		self.panelsettings.enabled = val
 		if gui:
 			self.checkbox_enabled.setChecked(val)
 			self.write_settings()
@@ -472,7 +533,7 @@ class Panel(QtGui.QGroupBox):
 
 	def change_channel(self, val, gui=True):
 		self.player.set_channel(val)
-		self.settings.channel = val
+		self.panelsettings.channel = val
 		if gui:
 		  self.spinbox_channel.setValue(val)
 		  self.write_settings()
@@ -481,7 +542,7 @@ class Panel(QtGui.QGroupBox):
 
 	def change_isscaled(self, val, gui=True):
 		self.player.set_isscaled(val)
-		self.settings.isscaled = val
+		self.panelsettings.isscaled = val
 		if gui:
 			self.checkbox_isscaled.setChecked(val)
 			self.write_settings()
@@ -490,7 +551,7 @@ class Panel(QtGui.QGroupBox):
 
 	def change_pitchmin(self, val, gui=True):
 		self.player.set_pitchmin(val)
-		self.settings.pitchmin = val
+		self.panelsettings.pitchmin = val
 		if gui:
 			self.spinbox_pitchmin.setValue(val)
 			self.write_settings()
@@ -499,7 +560,7 @@ class Panel(QtGui.QGroupBox):
 
 	def change_pitchmax(self, val, gui=True):
 		self.player.set_pitchmax(val)
-		self.settings.pitchmax = val
+		self.panelsettings.pitchmax = val
 		if gui:
 			self.spinbox_pitchmax.setValue(val)
 			self.write_settings()
@@ -508,7 +569,7 @@ class Panel(QtGui.QGroupBox):
 
 	def change_activemin(self, val, gui=True):
 		self.player.set_activemin(val)
-		self.settings.activemin = val
+		self.panelsettings.activemin = val
 		if gui:
 			self.spinbox_activemin.setValue(val)
 			self.write_settings()
@@ -517,7 +578,7 @@ class Panel(QtGui.QGroupBox):
 
 	def change_activemax(self, val, gui=True):
 		self.player.set_activemax(val)
-		self.settings.activemax = val
+		self.panelsettings.activemax = val
 		if gui:
 			self.spinbox_activemax.setValue(val)
 			self.write_settings()

@@ -1,5 +1,22 @@
 ﻿class Scale:
 
+	order = [
+		"Chromatic",
+		"Fifths",
+		"Octaves",
+		"Newage",
+		"Pentatonic",
+		"Aeolian",
+		"Dorian",
+		"Harminor",
+		"Ionian",
+		"Locrian",
+		"Lydian",
+		"Melminor",
+		"Mixolydian",
+		"Phrygian"
+		]
+
 	list = {
 		"Ionian": [0, 2, 4, 5, 7, 9, 11],
 		"Dorian": [0, 2, 3, 5, 7, 9, 10],
@@ -11,6 +28,7 @@
 		"Newage": [0, 3, 5, 7, 10],
 		"Fifths": [0, 7],
 		"Octaves": [0],
+		"Pentatonic": [0, 2, 4, 7, 9],
 		"Harminor": [0, 2, 3, 5, 7, 8, 11],
 		"Melminor": [0, 2, 3, 5, 7, 9, 11],
 		"Chromatic": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
@@ -52,5 +70,5 @@
 				p = pitch
 			scalenotes[pitch] = p
 
-		print "make_scalenotes = ",scalenotes
+		# print "make_scalenotes = ",scalenotes
 		return scalenotes

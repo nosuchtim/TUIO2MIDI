@@ -2,20 +2,29 @@
 
 from Scale import *
 from Quant import *
+from Key import *
+from Attribute import *
 from nosuch.midiutil import *
 from nosuch.midipypm import *
 
 class BehaviourLogic(object):    # inherit from object, make it a newstyle class
 
 	def __init__(self, player,settings):
-		self.name = ""
 		self.player = player
 		self.sidstate = None
-		self.lastaction = -1
+		self.lasttime = -1
 		self.first = True
 		self.settings = settings
+		self.scalenotes = None
+
+	def update_scalenotes(self):
+		keyindex = Key.names.index(self.settings.key)
+		self.scalenotes = Scale.make_scalenotes(self.settings.scale,keyindex)
 
 	def updateSidState(self,newstate):
+
+		if not self.settings.enabled:
+			return
 
 		if self.first:
 			self.first = False
@@ -30,22 +39,11 @@ class BehaviourLogic(object):    # inherit from object, make it a newstyle class
 			# Don't update state, so next diff is cumulative
 			pass
 		
-#	def set_scale(self, nm):
-#		print "Behaviour",self.name," set_scale=",nm
-#		if not (nm in Scale.list):
-#			print "No such scale: ", nm
-#			return
-#		self.scale = nm;
-#		if self.player:
-#			self.scalenotes = Scale.make_scalenotes(nm,0)
-#		else:
-#			self.scalenotes = None
-
 	def dragevent(self, newval):
 		pass
 
 	def diffSignificant(self, dv):
-		threshval = self.settings.threshold / 100.0
+		threshval = (self.settings.threshold / 100.0)
 		# print "threshval=",threshval," dv=",dv
 		if dv >= threshval:
 			return True
@@ -71,94 +69,73 @@ class BehaviourLogic(object):    # inherit from object, make it a newstyle class
 		d = abs(self.getVal(state1) - self.getVal(self.sidstate))
 		return d
 
-	def computeTime(self):
-		now = time.time()
-		tm = self.nextquant(now, self.settings.quant)
-		if tm <= self.lastaction:
-			# print "tm <= lastaction!?  too soon"
-			return
-		return tm
-
-
-	def computePitch(self):
-		settings = self.settings
-		dpitch = settings.pitchmax - settings.pitchmin
-		rawrange = 1.0
-		amin = settings.activemin * rawrange / 100.0
-		amax = settings.activemax * rawrange / 100.0
-		# print "amin=",amin," amax=",amax
-
-		v = self.getVal(self.sidstate)
-		print "computePitch getVal=",v
-		if v < amin:
-			v = amin
-		if v > amax:
-			v = amax
-		pitch = settings.pitchmin + dpitch * (v - amin) / (amax - amin)
-
-		# should this be rounded?
-		pitch = int(pitch)
-
-		# print "new v = ",v," pitch=",pitch
-		
-		if settings.isscaled:
-			pitch = self.player.scalenotes[pitch]
-		return pitch
-
 	def playnote(self):
 
 		if self.player == None:
 			print "Behaviour.playnote called with player==None?"
 			return
 
-		pitch = self.computePitch()
-		tm = self.computeTime()
-		dur = Quant.vals[self.settings.duration]
-		ch = self.settings.channel
-		vel = self.settings.velocity
+		s = self.settings
+		amin = s.activemin / 100.0
+		amax = s.activemax / 100.0
+		val = self.getVal(self.sidstate)
+		if val < amin:
+			return
+		if val > amax:
+			return
+		dpitch = s.pitchmax - s.pitchmin
+		pitch = s.pitchmin + dpitch * (val - amin) / (amax - amin)
+		pitch = int(pitch) # should this be rounded?
+		if s.isscaled:
+			pitch = self.scalenotes[pitch]
 
-		self.lastaction = tm
-		n = SequencedNote(pitch=pitch, duration=dur, channel=ch, velocity=vel)
+		now = time.time()
+		tm = self.nextquant(now, s.quant)
+		if tm <= self.lasttime:
+			# don't play two notes at the same time
+			return
+		self.lasttime = tm
+
+		dur = Quant.vals[s.duration]
+		ch = s.channel
+		vel = s.velocity
+
+		durclocks = Midi.clocks_per_second * dur
+		n = SequencedNote(pitch=pitch, duration=durclocks, channel=ch, velocity=vel)
 		if self.player.midiout:
 			self.player.midiout.schedule(n, time=tm)
 		else:
 			print("No MIDI output, trying to play pitch=%d channel=%d velocity=%d" % (n.pitch, n.channel, n.velocity))
 
-		print "playnote pitch=",pitch," dur=",dur," chan=",ch
+		print "playnote pitch=",pitch," dur=",dur," chan=",ch," tm=",tm
 
 
-class CenterYBehaviour(BehaviourLogic):
-
-	def __init__(self, player,settings):
-		BehaviourLogic.__init__(self,player,settings)
-		self.name = "Center_Y"
-
-	def getVal(self, state):
-		return state.y
-
-	def setVal(self, state, v):
-		state.y = v
-
-	def doAction(self):
-		self.playnote()
-
-class CenterXBehaviour(BehaviourLogic):
+class AttributeBehaviour(BehaviourLogic):
 
 	def __init__(self, player, settings):
 		BehaviourLogic.__init__(self,player,settings)
-		self.name = "Center_X"
 
 	def getVal(self, state):
-		return state.x
+		attrname = Attribute.names[self.settings.attribute]
+		if attrname.startswith("getVal"):
+			f = getattr(self,attrname)
+			v = f(state)
+			return v
+		else:
+			return getattr(state,attrname)
 
-	def setVal(self, state, v):
-		state.x = v
+	def getValTop(self,state):
+		return state.y + (state.h/2.0)
+
+	def getValBottom(self,state):
+		return state.y - (state.h/2.0)
+
+	def getValRight(self,state):
+		print "getValRight called"
+		return state.x + (state.w/2.0)
+
+	def getValLeft(self,state):
+		return state.x - (state.w/2.0)
 
 	def doAction(self):
 		self.playnote()
-
-
-Behaviours = {
-		"Center_Y": CenterYBehaviour,
-		"Center_X": CenterXBehaviour
-		}

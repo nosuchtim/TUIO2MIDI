@@ -1,4 +1,5 @@
-﻿from nosuch.midiutil import *
+﻿import os
+from nosuch.midiutil import *
 from nosuch.midipypm import *
 from Sid import *
 from BehaviourLogic import *
@@ -20,16 +21,6 @@ class Player():
 		self.debug = 2
 		self.midinotesdown = 0
 
-# 		# These are not the defaults
-# 		self.channel = 0
-# 		self.pitchmin = 40
-# 		self.pitchmax = 100
-# 		self.activemin = 10
-# 		self.activemax = 90
-# 		self.isscaled = True
-
-		self.keyindex = 0    # in keynames, also used as pitch offset
-
 		self.midi = MidiPypmHardware()
 		self.midiinputs = self.midi.input_devices()
 		self.midioutputs = self.midi.output_devices()
@@ -38,22 +29,21 @@ class Player():
 
 		Midi.callback(self.midicallback, "")
 
+		settingsname = "current"
+		dir = BehaviourSettings.settings_dirname(settingsname)
+		self.behaviournames = [f.replace(".json","") for f in os.listdir(dir) if os.path.isfile(os.path.join(dir,f)) and f.endswith(".json")]
+		self.behaviournames.sort()
+
 		self.behaviours = {}
-		for b in Behaviours:
-			# load settings from file
-			fn = "%s.json" % b
-			bs = BehaviourSettings(fname=fn)
-			self.behaviours[b] = Behaviours[b](self,bs)
+		for b in self.behaviournames:
+			fn = BehaviourSettings.behaviour_filename(settingsname,b)
+			bs = BehaviourSettings(fn)     # load settings from file
+			print "in behaviour named ",b," attribute is ",bs.attribute
+			self.behaviours[b] = AttributeBehaviour(self,bs)
 
 		# x, y, w, h = 500, 200, 100, 100
 		# self.setGeometry(x, y, w, h)
 
-		# self.panel = Panel(self, midiinputs, midioutputs, self.keynames)
-		# self.layout = QtGui.QHBoxLayout()
-		# self.layout.addWidget(self.panel)
-		# self.setLayout(self.layout)
-		# self.setWindowTitle("TUIO2MIDI")
-		
 	def set_message(self, msg):
 		self.panel.set_message(msg)
 
@@ -71,77 +61,86 @@ class Player():
 			self.midiout.schedule(p)
 
 	def set_tuioport(self, port):
-		print "Player.set_tuioport ",port
+		# print "Player.set_tuioport ",port
 		# self.panel.change_tuioport(port)
+		pass
 
 	def set_midiout(self, name):
-		print "Player.set_midiout needs work?"
+		self.open_midiout(name)
 
 	def set_midiin(self, name):
-		print "Player.set_midiin needs work?"
+		self.open_midiin(name)
 
 	def set_threshold(self, v):
-		print "Player.set_threshold ", v
+		# print "Player.set_threshold ", v
 		self.threshold = v
 
 	def set_velocity(self, v):
-		print "Player.set_velocity ", v
+		# print "Player.set_velocity ", v
 		self.velocity = v
 
 	def set_enabled(self, b):
-		print "Player.set_enabled ", b
+		# print "Player.set_enabled ", b
 		self.enabled = b
 
 	def set_channel(self, v):
-		print "Player.set_channel ", v
+		# print "Player.set_channel ", v
 		self.channel = v
 
 	def set_isscaled(self, v):
-		print "Player.set_isscaled ", v
+		# print "Player.set_isscaled ", v
 		self.isscaled = v
 
 	def set_pitchmin(self, v):
-		print "Player.set_pitchmin ", v
+		# print "Player.set_pitchmin ", v
 		self.pitchmin = v
 
 	def set_pitchmax(self, v):
-		print "Player.set_pitchmax ", v
+		# print "Player.set_pitchmax ", v
 		self.pitchmax = v
 
 	def set_activemin(self, v):
-		print "Player.set_activemin ", v
+		# print "Player.set_activemin ", v
 		self.activemin = v
 
 	def set_activemax(self, v):
-		print "Player.set_activemax ", v
+		# print "Player.set_activemax ", v
 		self.activemax = v
 
 	def set_duration(self, nm):
 		if not (nm in Duration.vals):
 			print "No such duration: ", nm
 			return
-		print "Player.set_duration=", nm
+		# print "Player.set_duration=", nm
 		self.duration = Duration.vals[nm]
 
 	def set_quant(self, nm):
 		if not (nm in Quant.vals):
 			print "No such quant: ", nm
 			return
-		self.quant = Quant.vals[nm]
-		print "Player.set_quant=",nm
+		# self.quant = Quant.vals[nm]
+		# print "Player.set_quant=",nm
+		pass
+
+
+	def set_attribute(self, nm):
+		if not (nm in Attribute.names):
+			print "No such attribute: ", nm
+			return
+		self.attribute = nm
+		print "Player.set_attribute=",nm
 
 	def set_key(self, nm):
 		if not (nm in Key.names):
 			print "No such key: ", nm
 			return
-		print "Player.set_key=", nm
-		self.keyindex = Key.names.index(nm)
-		self.scalenotes = Scale.make_scalenotes(self.scale,self.keyindex)
+		# print "Player.set_key=", nm
+		pass
 
 	def set_scale(self,nm):
-		print "Player.set_scale nm=",nm
+		# print "Player.set_scale nm=",nm
 		self.scale = nm
-		self.scalenotes = Scale.make_scalenotes(self.scale,self.keyindex)
+		pass
 
 	def open_midiin(self, name):
 		if self.midiin:
@@ -153,7 +152,7 @@ class Player():
 			if name != "None":
 				self.midiin = self.midi.get_input(name)
 				self.midiin.open()
-			# self.set_message("MIDI input set to: %s" % name)
+			print "MIDI input set to: %s" % name
 			self.set_message("")
 		except:
 			self.set_message("Unable to open MIDI input: %s" % name)
@@ -174,7 +173,7 @@ class Player():
 				tmp = self.midi.get_output(name)
 				tmp.open()
 				self.midiout = tmp
-			# self.set_message("MIDI output set to: %s" % name)
+			print "MIDI output set to: %s" % name
 			self.set_message("")
 		except:
 			self.set_message("Unable to open MIDI output: %s" % name)
@@ -217,65 +216,64 @@ class Player():
 			self.sids[sid] = SidInstance(self)
 			
 		for b in self.behaviours:
-			bl = self.behaviours[b]
-			bl.updateSidState(newstate)
+			self.behaviours[b].updateSidState(newstate)
 
-	def pitchof(self, state):
-		x = state.x
-		# Make sure x is from 0 to 1
-		if x < 0.0:
-			x = 0.0
-		if x > 1.0:
-			x = 1.0
-		dp = self.pitchmax - self.pitchmin
-		rawp = self.pitchmin + int(dp * x)
-		if self.isscaled:
-			p = self.scalenotes[rawp]
-		else:
-			p = rawp
-		if self.debug > 1:
-			print "PITCHOF x=%.3f p=%d   dp=%.3f int(dp*x)=%d" % (x, p, dp, int(dp * x))
-		return p
-
-	def velocityof(self, state):
-		return int(self.z * 128.0)
-
-	def channelof(self, state):
-		# y = pos[1]
-		# return 1 + (int(y * 16.0) % 16)
-		return 1
-
-	def quantof(self, state):
-		# returns quantization in seconds
-		y = state.y
-		# if y < 0.05:
-		# 	return 0
-		# if y < 0.05:
-		# 	return 0.03125
-		if y < 0.2:
-			return 0.0625
-		if y < 0.45:
-			return 0.125
-		if y < 0.7:
-			return 0.250
-		return 0.5
-
-	def durationof(self, pos):
-		# Returns duration in clocks.
-		y = pos[1]
-		# The higher you are, the longer the duration.
-		b = Midi.clocks_per_second
-		if y < 0.1:
-			return 1
-		if y < 0.2:
-			return b / 16
-		if y < 0.4:
-			return b / 8
-		if y < 0.6:
-			return b / 4
-		if y < 0.75:
-			return b
-		return b * 2
+# 	def pitchof(self, state):
+# 		x = state.x
+# 		# Make sure x is from 0 to 1
+# 		if x < 0.0:
+# 			x = 0.0
+# 		if x > 1.0:
+# 			x = 1.0
+# 		dp = self.pitchmax - self.pitchmin
+# 		rawp = self.pitchmin + int(dp * x)
+# 		if self.isscaled:
+# 			p = self.scalenotes[rawp]
+# 		else:
+# 			p = rawp
+# 		if self.debug > 1:
+# 			print "PITCHOF x=%.3f p=%d   dp=%.3f int(dp*x)=%d" % (x, p, dp, int(dp * x))
+# 		return p
+# 
+# 	def velocityof(self, state):
+# 		return int(self.z * 128.0)
+# 
+# 	def channelof(self, state):
+# 		# y = pos[1]
+# 		# return 1 + (int(y * 16.0) % 16)
+# 		return 1
+# 
+# 	def quantof(self, state):
+# 		# returns quantization in seconds
+# 		y = state.y
+# 		# if y < 0.05:
+# 		# 	return 0
+# 		# if y < 0.05:
+# 		# 	return 0.03125
+# 		if y < 0.2:
+# 			return 0.0625
+# 		if y < 0.45:
+# 			return 0.125
+# 		if y < 0.7:
+# 			return 0.250
+# 		return 0.5
+# 
+# 	def durationof(self, pos):
+# 		# Returns duration in clocks.
+# 		y = pos[1]
+# 		# The higher you are, the longer the duration.
+# 		b = Midi.clocks_per_second
+# 		if y < 0.1:
+# 			return 1
+# 		if y < 0.2:
+# 			return b / 16
+# 		if y < 0.4:
+# 			return b / 8
+# 		if y < 0.6:
+# 			return b / 4
+# 		if y < 0.75:
+# 			return b
+# 		return b * 2
 
 	def cursorDown(self, state):
 		self.cursorDrag(state)
