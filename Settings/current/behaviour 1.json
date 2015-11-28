@@ -1,0 +1,16 @@
+{
+"enabled":2,
+"attribute":"Left",
+"activemin":0,
+"activemax":100,
+"pitchmin":60,
+"pitchmax":80,
+"threshold":0.000000,
+"scale":"Fifths",
+"isscaled":2,
+"key":"E",
+"channel":1,
+"duration":"1/16",
+"quant":"1/4",
+"velocity":107
+}

@@ -11,11 +11,10 @@ class Widget(QtGui.QWidget):
 
 		super(Widget, self).__init__()
 		
-		self.debug = 2
 		# self.midinotesdown = 0
 		self.keyindex = 0    # in keynames, also used as pitch offset
 
-		x, y, w, h = 500, 200, 100, 100
+		x, y, w, h = 100, 200, 100, 100
 		self.setGeometry(x, y, w, h)
 
 		self.panel = Panel(player,settingsname)

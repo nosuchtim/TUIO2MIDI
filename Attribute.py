@@ -1,11 +1,12 @@
 ﻿class Attribute:
 	names = {
-		"Center X" : "x",
-		"Center Y" : "y",
+		"CenterX" : "x",
+		"CenterY" : "y",
 		"Top" : "getValTop",
 		"Bottom" : "getValBottom",
 		"Right" : "getValRight",
 		"Left" : "getValLeft",
+		"Depth" : "getValDepth",
 		}
 
 	order = []

@@ -33,54 +33,12 @@ class HelpPopup(QtGui.QWidget):
 	def helptext(self):
 		return (
 		"<h2>TUIO2MIDI</h2>"
-		"This program uses the Leap Motion device to "
-		"translate your finger movement into MIDI.  "
-		"<p>"
-		"To get started, you need to set "
-		"<b>MIDI Output</b> to the device you "
-		"want to use.  On Windows, you can use "
-		"the <i>Microsoft GS WaveTable Synth</i> if you don't "
-		"have anything else.  You should then be able "
-		"to wave your hand above the Leap Motion device "
-		"and hear notes being played.  "
-		"<p>"
-		"The pitch of the MIDI notes is determined by "
-		"the horizontal (left/right) position of your "
-		"fingers.  "
-		"The velocity of the MIDI notes (which usually "
-		"controls the volume) is determined by the "
-		"depth (in/out) of your fingers.  "
-		"<p>"
-		"The <b>Quantization</b> value controls the timing "
-		"of the notes.  If you select <i>Height-based</i>, the "
-		"height (up/down) of your fingers will determine the "
-		"quantization amount."
-		"<p>"
-		"The <b>Duration</b> value controls how long the notes "
-		"will play.  If you select <i>Height-based</i>, the "
-		"height (up/down) of your fingers will determine the "
-		"note duration."
-		"<p>"
-		"The <b>Movement Threshold</b> value is the distance that "
-		"your finger must move before a new MIDI note "
-		"is triggered.  "
-		"If you set this value to 0.0, MIDI notes will be "
-		"triggered continuously, as long as the Leap device "
-		"sees your fingers."
-		"<p>"
-		"The <b>Scale</b> value controls how the notes are "
-		"adjusted to fall on particular musical scales.  "
-		"You can optionally set the notes of the scale by specifying "
-		"a <b>MIDI Input</b> device - typically a MIDI keyboard "
-		"controller.  If you play a chord of notes on the "
-		"MIDI input device, those notes will be used as the scale "
-		"of notes that you are playing with your Leap.  "
-		"You don't have to hold the chord notes down - they "
-		"will be remembered and used until you play a new chord.  "
-		"You can change the chord/scale in realtime, so "
-		"a common scenario would be to use one hand on the MIDI "
-		"keyboard to control the chord/scale and one hand above "
-		"the Leap to play notes."
+		"This program converts TUIO messages "
+		"(using the 25D profile) into MIDI.  "
+		"It is intended for use with the "
+		"MMTT software that uses 3D cameras "
+		"(like the Kinect) to track body "
+		"movement and send out TUIO messages."
 		"<p>"
 		"by Tim Thompson "
 		"(me@timthompson.com, http://timthompson.com)"
@@ -102,17 +60,21 @@ class Panel(QtGui.QGroupBox):
 
 		self.label_message = QtGui.QLabel("")
 
-		self.label_title = QtGui.QLabel(" TUIO2MIDI")
+		self.label_title = QtGui.QLabel("TUIO2MIDI  ")
 		f = self.label_title.font()
 		f.setPointSize(20)
 		self.label_title.setFont(f)
-		self.label_title.setAlignment(QtCore.Qt.AlignHCenter)
-		# self.label_title.setAlignment(QtCore.Qt.AlignVCenter)
+		self.label_title.setAlignment(QtCore.Qt.AlignLeft)
 
 		self.label_settingsname = self.just_label("Settings")
-		self.spinbox_settingsname = QtGui.QLineEdit()
-		self.spinbox_settingsname.textChanged.connect(self.change_settingsname)
-		self.spinbox_settingsname.setText(settingsname)
+		self.combo_settingsname = QtGui.QComboBox()
+		self.combo_settingsname.activated[str].connect(self.change_settingsname)
+		self.init_combo_settingsname()
+
+		# self.label_settingsname = self.just_label("Settings")
+		# self.spinbox_settingsname = QtGui.QLineEdit()
+		# self.spinbox_settingsname.returnPressed.connect(self.change_settingsname)
+		# self.spinbox_settingsname.setText(settingsname)
 
 		self.label_tuioport = self.just_label("TUIO Port")
 		self.spinbox_tuioport = QtGui.QSpinBox()
@@ -152,9 +114,7 @@ class Panel(QtGui.QGroupBox):
 
 		self.label_behaviour = self.just_label("Behaviour")
 		self.combo_behaviour = QtGui.QComboBox()
-		for i in self.player.behaviournames:
-			self.combo_behaviour.addItem(i)
-		self.combo_behaviour.activated[str].connect(self.change_behaviour)
+		self.init_combo_behaviour()
 
 		self.label_midiin = self.just_label("Midi Input")
 		self.combo_midiin = QtGui.QComboBox()
@@ -170,7 +130,7 @@ class Panel(QtGui.QGroupBox):
 		self.combo_midiout.addItem("None")
 		self.combo_midiout.activated[str].connect(self.change_midiout)
 
-		self.label_thresh = self.just_label("Threshold")
+		self.label_thresh = self.just_label("Active Move%")
 		self.spinbox_thresh = QtGui.QSpinBox()
 		self.spinbox_thresh.setRange(0, 100)
 		self.spinbox_thresh.setSingleStep(1)
@@ -182,11 +142,17 @@ class Panel(QtGui.QGroupBox):
 		self.spinbox_velocity.setSingleStep(1)
 		self.spinbox_velocity.valueChanged.connect(self.change_velocity)
 
-		self.label_blankheader = self.just_label("")
+		self.label_blankheader = self.just_label("---------------------------------------------------------------")
 
 		self.label_enabled = self.just_label("Enabled")
 		self.checkbox_enabled = QtGui.QCheckBox()
 		self.checkbox_enabled.stateChanged[int].connect(self.change_enabled)
+		
+		self.label_verbose = self.just_label("Verboseness")
+		self.spinbox_verbose = QtGui.QSpinBox()
+		self.spinbox_verbose.setRange(0, 2)
+		self.spinbox_verbose.setSingleStep(1)
+		self.spinbox_verbose.valueChanged[int].connect(self.change_verbose)
 		
 		self.label_channel = self.just_label("Channel")
 		self.spinbox_channel = QtGui.QSpinBox()
@@ -211,14 +177,14 @@ class Panel(QtGui.QGroupBox):
 		self.spinbox_pitchmax.setSingleStep(1)
 		self.spinbox_pitchmax.valueChanged[int].connect(self.change_pitchmax)
 
-		self.label_activemin = self.just_label("Active Min")
+		self.label_activemin = self.just_label("Active Min%")
 		self.spinbox_activemin = QtGui.QSpinBox()
 		self.spinbox_activemin.setRange(0, 90)
 		self.spinbox_activemin.setSingleStep(1)
 		# self.spinbox_activemin.valueChanged[int].connect(self.change_activemin)
 		self.spinbox_activemin.valueChanged.connect(self.change_activemin)
 
-		self.label_activemax = self.just_label("Active Max")
+		self.label_activemax = self.just_label("Active Max%")
 		self.spinbox_activemax = QtGui.QSpinBox()
 		self.spinbox_activemax.setRange(10, 100)
 		self.spinbox_activemax.setSingleStep(1)
@@ -227,19 +193,21 @@ class Panel(QtGui.QGroupBox):
 		layout = QtGui.QGridLayout()
 
 		ncols = 4
-
 		row = 0
-		layout.addWidget(self.label_title, row, 0, 1, ncols)
 
-		self.help_button = QtGui.QPushButton("Help")
-		self.help_button.clicked.connect(self.do_help)
-		layout.addWidget(self.help_button, row, 3, 1, 1)
+		layout2 = QtGui.QGridLayout()
 
-		# row += 1
-		# layout.addWidget(self.createQuantGroup(),row,0,1,ncols)
+		layout2.addWidget(self.label_title, 0, 0, 1, 1)
 
-		# row += 1
-		# layout.addWidget(self.createDurationGroup(),row,0,1,ncols)
+		self.open_button = QtGui.QPushButton("Open Settings")
+		self.open_button.clicked.connect(self.do_open)
+		layout2.addWidget(self.open_button, 0, 2, 1, 1)
+
+		layout.addLayout(layout2, 0, 0, 1, 3)
+
+		# self.help_button = QtGui.QPushButton("Help")
+		# self.help_button.clicked.connect(self.do_help)
+		# layout.addWidget(self.help_button, row, 3, 1, 1)
 
 		row += 1
 		layout.addWidget(self.label_top, row, 0, 1, ncols)
@@ -247,7 +215,7 @@ class Panel(QtGui.QGroupBox):
 		row += 1
 
 		layout.addWidget(self.label_settingsname, row, 1, 1, 1)
-		layout.addWidget(self.spinbox_settingsname, row, 2, 1, 1)
+		layout.addWidget(self.combo_settingsname, row, 2, 1, 1)
 
 		row += 1
 
@@ -263,6 +231,10 @@ class Panel(QtGui.QGroupBox):
 		layout.addWidget(self.combo_midiout, row, 2, 1, 1)
 
 		row += 1
+		layout.addWidget(self.label_verbose, row, 1, 1, 1)
+		layout.addWidget(self.spinbox_verbose, row, 2, 1, 1)
+
+		row += 1
 		layout.addWidget(self.label_blankheader, row, 0, 1, ncols)
 
 		row += 1
@@ -270,16 +242,12 @@ class Panel(QtGui.QGroupBox):
 		layout.addWidget(self.combo_behaviour, row, 2, 1, 1)
 
 		row += 1
-		layout.addWidget(self.label_attribute, row, 1, 1, 1)
-		layout.addWidget(self.combo_attribute, row, 2, 1, 1)
-
-		row += 1
 		layout.addWidget(self.label_enabled, row, 1, 1, 1)
 		layout.addWidget(self.checkbox_enabled, row, 2, 1, 1)
 
 		row += 1
-		layout.addWidget(self.label_channel, row, 1, 1, 1)
-		layout.addWidget(self.spinbox_channel, row, 2, 1, 1)
+		layout.addWidget(self.label_attribute, row, 1, 1, 1)
+		layout.addWidget(self.combo_attribute, row, 2, 1, 1)
 
 		row += 1
 		layout.addWidget(self.label_activemin, row, 1, 1, 1)
@@ -288,6 +256,14 @@ class Panel(QtGui.QGroupBox):
 		row += 1
 		layout.addWidget(self.label_activemax, row, 1, 1, 1)
 		layout.addWidget(self.spinbox_activemax, row, 2, 1, 1)
+
+		row += 1
+		layout.addWidget(self.label_thresh, row, 1, 1, 1)
+		layout.addWidget(self.spinbox_thresh, row, 2, 1, 1)
+
+		row += 1
+		layout.addWidget(self.label_channel, row, 1, 1, 1)
+		layout.addWidget(self.spinbox_channel, row, 2, 1, 1)
 
 		row += 1
 		layout.addWidget(self.label_pitchmin, row, 1, 1, 1)
@@ -317,11 +293,6 @@ class Panel(QtGui.QGroupBox):
 		layout.addWidget(self.label_duration, row, 1, 1, 1)
 		layout.addWidget(self.combo_duration, row, 2, 1, 1)
 
-		# ETC...
-		row += 1
-		layout.addWidget(self.label_thresh, row, 1, 1, 1)
-		layout.addWidget(self.spinbox_thresh, row, 2, 1, 1)
-
 		row += 1
 		layout.addWidget(self.label_velocity, row, 1, 1, 1)
 		layout.addWidget(self.spinbox_velocity, row, 2, 1, 1)
@@ -330,6 +301,29 @@ class Panel(QtGui.QGroupBox):
 		layout.addWidget(self.label_message, row, 0, 1, ncols)
 
 		self.setLayout(layout)
+
+	def init_combo_behaviour(self):
+		self.combo_behaviour.clear()
+		for i in self.player.behaviournames:
+			if self.currbehaviour == None:
+				self.currbehaviour = i
+			self.combo_behaviour.addItem(i)
+		self.combo_behaviour.activated[str].connect(self.change_behaviour)
+
+	def init_combo_settingsname(self):
+		self.combo_settingsname.clear()
+		dir = BehaviourSettings.settings_parentdir()
+		settingsnames = [f.replace(".json","") for f in os.listdir(dir) if os.path.isdir(os.path.join(dir,f)) ]
+		settingsnames.sort()
+		ix = 0
+		for i in settingsnames:
+			self.combo_settingsname.addItem(i)
+			if i == "current":
+				current_ix = ix
+			ix += 1
+		self.combo_settingsname.activated[str].connect(self.change_settingsname)
+		self.settingsname = "current"
+		self.combo_settingsname.setCurrentIndex(current_ix)
 
 	def just_label(self, s):
 		# in case the label Alignment needs to be changed
@@ -341,8 +335,11 @@ class Panel(QtGui.QGroupBox):
 
 	def do_help(self):
 		self.helpwindow = HelpPopup()
-		self.helpwindow.setGeometry(QtCore.QRect(100, 100, 400, 550))
+		self.helpwindow.setGeometry(QtCore.QRect(300, 100, 400, 150))
 		self.helpwindow.show()
+
+	def do_open(self):
+		os.system("start %s" % BehaviourSettings.settings_parentdir())
 
 	def close_help(self):
 		if self.helpwindow:
@@ -351,10 +348,13 @@ class Panel(QtGui.QGroupBox):
 	def set_message(self, msg):
 		self.label_message.setText(msg)
 
-	def change_settingsname(self, val):
-		self.settingsname = str(val)
+	def change_settingsname(self):
+		self.settingsname = str(self.combo_settingsname.currentText())
+		self.player.init_settings(self.settingsname)
+		self.currbehaviour = None
+		self.init_combo_behaviour()
 		if self.currbehaviour:
-			self.change_behaviour(self, self.currbehaviour, True)
+			self.change_behaviour(self.currbehaviour, True)
 
 	def change_tuioport(self, val):
 		# print "Panel.change_tuioport val=",val
@@ -528,6 +528,13 @@ class Panel(QtGui.QGroupBox):
 		if gui:
 			self.checkbox_enabled.setChecked(val)
 			self.write_settings()
+
+	####### Verbose
+
+	def change_verbose(self, val, gui=True):
+		self.player.verbose = val
+		if gui:
+			self.spinbox_verbose.setValue(val)
 
 	####### Channel
 

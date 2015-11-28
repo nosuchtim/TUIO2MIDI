@@ -2,8 +2,7 @@
 #
 # TUIO2MIDI
 #
-# Translate Leap Motion into MIDI, using all 3 dimensions.
-# Pitch is controlled by the X dimension.
+# Translate TUIO into MIDI, using all 3 dimensions in the 25D profile
 #
 # by Tim Thompson, me@timthompson.com, http://timthompson.com
 
@@ -40,24 +39,23 @@ if __name__ == "__main__":
 		midiinputname = args[3]
 		settingsname = args[4]
 
-	BehaviourSettings.directory = "current"
-
 	App = QtGui.QApplication(sys.argv)
 
 	Midi.startup()
 
-	TPlayer = Player()
+	TPlayer = Player(settingsname)
 	TWidget = Widget(TPlayer,settingsname)
 	TPanel = TWidget.panel
 
 	TPlayer.set_panel(TPanel)
 
 	if len(TPlayer.behaviournames) <= 0:
-		print "Hey!?  No behaviours in %s !?" % BehaviourSettings.settings_dirname(settingsname)
+		print "Hey!?  No behaviours in %s !?" % BehaviourSettings.settings_dir(settingsname)
 		sys.exit(1)
 
 	bn = TPlayer.behaviournames[0]
 	TPanel.change_behaviour(bn, True)
+	TPanel.change_verbose(1, True)
 
 	TPanel.change_tuioport(tuioport)
 	TPanel.change_midiout(midioutputname)
@@ -67,10 +65,6 @@ if __name__ == "__main__":
 
 	oscmon = OscMonitor("127.0.0.1", tuioport)
 	oscmon.setcallback(TPlayer.mycallback, "")
-
-	# leapmon = LeapMonitor(leapcallback,TP)
-	# leapcontrol = Leap.Controller()
-	# leapcontrol.add_listener(leapmon)
 
 	TWidget.show_and_raise()
 

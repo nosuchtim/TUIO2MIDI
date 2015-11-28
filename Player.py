@@ -1,4 +1,8 @@
 ﻿import os
+import shutil
+import time
+import json
+
 from nosuch.midiutil import *
 from nosuch.midipypm import *
 from Sid import *
@@ -9,16 +13,14 @@ from Scale import *
 from Key import *
 from Duration import *
 
-import json
-
 class Player():
 
-	def __init__(self):
+	def __init__(self,settingsname):
 
 		self.sids = {}   # index is sid name, value is SidInstance
 
 		self.panel = None
-		self.debug = 2
+		self.verbose = 0
 		self.midinotesdown = 0
 
 		self.midi = MidiPypmHardware()
@@ -27,10 +29,27 @@ class Player():
 		self.midiout = None
 		self.midiin = None
 
+		self.time0 = time.time()
+
 		Midi.callback(self.midicallback, "")
 
-		settingsname = "current"
-		dir = BehaviourSettings.settings_dirname(settingsname)
+		self.init_settings(settingsname)
+
+	def init_settings(self,settingsname):
+		dir = BehaviourSettings.settings_dir(settingsname)
+		try:
+			os.stat(dir)
+		except:
+			# directory doesn't exist?
+			os.makedirs(dir)
+			# Copy stuff from "current" settings
+			currentdir = BehaviourSettings.settings_dir("current")
+			for fn in os.listdir(currentdir):
+				src = os.path.join(currentdir,fn)
+				dst = os.path.join(dir,fn)
+				print "Copying %s to %s" % (src,dst)
+				shutil.copyfile(src,dst)
+
 		self.behaviournames = [f.replace(".json","") for f in os.listdir(dir) if os.path.isfile(os.path.join(dir,f)) and f.endswith(".json")]
 		self.behaviournames.sort()
 
@@ -38,11 +57,8 @@ class Player():
 		for b in self.behaviournames:
 			fn = BehaviourSettings.behaviour_filename(settingsname,b)
 			bs = BehaviourSettings(fn)     # load settings from file
-			print "in behaviour named ",b," attribute is ",bs.attribute
+			# print "Creating behaviour named '%s' in '%s' settings" % (b,settingsname)
 			self.behaviours[b] = AttributeBehaviour(self,bs)
-
-		# x, y, w, h = 500, 200, 100, 100
-		# self.setGeometry(x, y, w, h)
 
 	def set_message(self, msg):
 		self.panel.set_message(msg)
@@ -128,7 +144,7 @@ class Player():
 			print "No such attribute: ", nm
 			return
 		self.attribute = nm
-		print "Player.set_attribute=",nm
+		# print "Player.set_attribute=",nm
 
 	def set_key(self, nm):
 		if not (nm in Key.names):
@@ -191,7 +207,7 @@ class Player():
 	# 	self.panel.close_help()
 
 	def midicallback(self, msg, data):
-		if self.debug > 0:
+		if self.verbose:
 			print("MIDI INPUT = %s" % str(msg))
 		m = msg.midimsg
 
@@ -217,71 +233,6 @@ class Player():
 			
 		for b in self.behaviours:
 			self.behaviours[b].updateSidState(newstate)
-
-# 	def pitchof(self, state):
-# 		x = state.x
-# 		# Make sure x is from 0 to 1
-# 		if x < 0.0:
-# 			x = 0.0
-# 		if x > 1.0:
-# 			x = 1.0
-# 		dp = self.pitchmax - self.pitchmin
-# 		rawp = self.pitchmin + int(dp * x)
-# 		if self.isscaled:
-# 			p = self.scalenotes[rawp]
-# 		else:
-# 			p = rawp
-# 		if self.debug > 1:
-# 			print "PITCHOF x=%.3f p=%d   dp=%.3f int(dp*x)=%d" % (x, p, dp, int(dp * x))
-# 		return p
-# 
-# 	def velocityof(self, state):
-# 		return int(self.z * 128.0)
-# 
-# 	def channelof(self, state):
-# 		# y = pos[1]
-# 		# return 1 + (int(y * 16.0) % 16)
-# 		return 1
-# 
-# 	def quantof(self, state):
-# 		# returns quantization in seconds
-# 		y = state.y
-# 		# if y < 0.05:
-# 		# 	return 0
-# 		# if y < 0.05:
-# 		# 	return 0.03125
-# 		if y < 0.2:
-# 			return 0.0625
-# 		if y < 0.45:
-# 			return 0.125
-# 		if y < 0.7:
-# 			return 0.250
-# 		return 0.5
-# 
-# 	def durationof(self, pos):
-# 		# Returns duration in clocks.
-# 		y = pos[1]
-# 		# The higher you are, the longer the duration.
-# 		b = Midi.clocks_per_second
-# 		if y < 0.1:
-# 			return 1
-# 		if y < 0.2:
-# 			return b / 16
-# 		if y < 0.4:
-# 			return b / 8
-# 		if y < 0.6:
-# 			return b / 4
-# 		if y < 0.75:
-# 			return b
-# 		return b * 2
-
-	def cursorDown(self, state):
-		self.cursorDrag(state)
-
-	def cursorUp(self, state):
-		# print "Up sid=",state.sid," x=",state.x," y=",state.y," z=",state.z
-		# self.cursorUpdate(state)
-		pass
 
 	def fullsid(self, sid, source):
 		return "%d-%s" % (int(sid), source)

@@ -87,6 +87,9 @@ class BehaviourLogic(object):    # inherit from object, make it a newstyle class
 		pitch = s.pitchmin + dpitch * (val - amin) / (amax - amin)
 		pitch = int(pitch) # should this be rounded?
 		if s.isscaled:
+			if self.scalenotes == None:
+				print "Hey, scalenotes is None?"
+				return
 			pitch = self.scalenotes[pitch]
 
 		now = time.time()
@@ -107,7 +110,8 @@ class BehaviourLogic(object):    # inherit from object, make it a newstyle class
 		else:
 			print("No MIDI output, trying to play pitch=%d channel=%d velocity=%d" % (n.pitch, n.channel, n.velocity))
 
-		print "playnote pitch=",pitch," dur=",dur," chan=",ch," tm=",tm
+		if self.player.verbose > 0:
+			print "playnote pitch=",pitch," dur=",dur," chan=",ch," tm=",(tm-self.player.time0)
 
 
 class AttributeBehaviour(BehaviourLogic):
@@ -120,9 +124,13 @@ class AttributeBehaviour(BehaviourLogic):
 		if attrname.startswith("getVal"):
 			f = getattr(self,attrname)
 			v = f(state)
-			return v
 		else:
-			return getattr(state,attrname)
+			v = getattr(state,attrname)
+
+		if self.player.verbose > 1:
+			print "Value of %s is %.3f" % (self.settings.attribute,v)
+
+		return v
 
 	def getValTop(self,state):
 		return state.y + (state.h/2.0)
@@ -131,11 +139,13 @@ class AttributeBehaviour(BehaviourLogic):
 		return state.y - (state.h/2.0)
 
 	def getValRight(self,state):
-		print "getValRight called"
 		return state.x + (state.w/2.0)
 
 	def getValLeft(self,state):
 		return state.x - (state.w/2.0)
+
+	def getValDepth(self,state):
+		return state.z
 
 	def doAction(self):
 		self.playnote()

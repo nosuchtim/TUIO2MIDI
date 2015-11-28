@@ -39,21 +39,25 @@ class BehaviourSettings(object):    # inherit from object, make it a newstyle cl
 			self.velocity = j["velocity"]
 
 	@staticmethod
-	def settings_dirname(settingsname):
-		return "Settings_%s" % (settingsname)
+	def settings_parentdir():
+		return "Settings"
+
+	@staticmethod
+	def settings_dir(settingsname):
+		return os.path.join(BehaviourSettings.settings_parentdir(),settingsname)
 
 	@staticmethod
 	def behaviour_filename(settingsname,behaviourname):
-		return "%s/%s.json" % (BehaviourSettings.settings_dirname(settingsname),behaviourname)
+		return "%s/%s.json" % (BehaviourSettings.settings_dir(settingsname),behaviourname)
 
 	def write_behaviour(self,settingsname,behaviourname):
 		# Make sure directory exists
-		dn = BehaviourSettings.settings_dirname(settingsname)
+		dn = BehaviourSettings.settings_dir(settingsname)
 		try:
 			os.stat(dn)
 		except:
 			# directory doesn't exist, probably
-			os.mkdir(dn)
+			os.makedirs(dn)
 
 		fname = self.behaviour_filename(settingsname,behaviourname)
 		try:
