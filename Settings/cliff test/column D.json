@@ -1,7 +1,8 @@
 {
-"enabled":0,
-"attribute":"Left",
-"activemin":0,
+"enabled":2,
+"attribute":"CenterX",
+"source":"",
+"activemin":75,
 "activemax":100,
 "valuemin":60,
 "valuemax":80,
@@ -9,7 +10,7 @@
 "scale":"Fifths",
 "isscaled":2,
 "key":"E",
-"channel":1,
+"channel":4,
 "duration":"1/8",
 "quant":"1/8",
 "velocity":107

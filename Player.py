@@ -88,46 +88,36 @@ class Player():
 		self.open_midiin(name)
 
 	def set_threshold(self, v):
-		# print "Player.set_threshold ", v
 		self.threshold = v
 
 	def set_velocity(self, v):
-		# print "Player.set_velocity ", v
 		self.velocity = v
 
 	def set_enabled(self, b):
-		# print "Player.set_enabled ", b
 		self.enabled = b
 
 	def set_channel(self, v):
-		# print "Player.set_channel ", v
 		self.channel = v
 
 	def set_isscaled(self, v):
-		# print "Player.set_isscaled ", v
 		self.isscaled = v
 
 	def set_pitchmin(self, v):
-		# print "Player.set_pitchmin ", v
 		self.pitchmin = v
 
 	def set_pitchmax(self, v):
-		# print "Player.set_pitchmax ", v
 		self.pitchmax = v
 
 	def set_activemin(self, v):
-		# print "Player.set_activemin ", v
 		self.activemin = v
 
 	def set_activemax(self, v):
-		# print "Player.set_activemax ", v
 		self.activemax = v
 
 	def set_duration(self, nm):
 		if not (nm in Duration.vals):
 			print "No such duration: ", nm
 			return
-		# print "Player.set_duration=", nm
 		self.duration = Duration.vals[nm]
 
 	def set_quant(self, nm):
@@ -138,13 +128,17 @@ class Player():
 		# print "Player.set_quant=",nm
 		pass
 
+	def set_source(self, nm):
+		self.source = nm
 
 	def set_attribute(self, nm):
 		if not (nm in Attribute.names):
 			print "No such attribute: ", nm
 			return
 		self.attribute = nm
-		# print "Player.set_attribute=",nm
+
+	def set_actiontype(self, nm):
+		self.actiontype = nm
 
 	def set_key(self, nm):
 		if not (nm in Key.names):
@@ -154,9 +148,7 @@ class Player():
 		pass
 
 	def set_scale(self,nm):
-		# print "Player.set_scale nm=",nm
 		self.scale = nm
-		pass
 
 	def open_midiin(self, name):
 		if self.midiin:
@@ -253,7 +245,8 @@ class Player():
 					continue
 				if m[2] == "source":
 					source = m[3]
-					# print "SOURCE = ",source
+					if source.find(self.source) < 0:
+						return
 					continue
 
 		alive = {}

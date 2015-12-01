@@ -25,10 +25,21 @@ class BehaviourSettings(object):    # inherit from object, make it a newstyle cl
 		if j:
 			self.enabled = j["enabled"]
 			self.attribute = j["attribute"]
+
+			if not "source" in j:
+				self.source = ""  # default, matches everything
+			else:
+				self.source = j["source"]
+
+			if not "actiontype" in j:
+				self.actiontype = "Note"  # default, matches everything
+			else:
+				self.actiontype = j["actiontype"]
+
 			self.activemin = j["activemin"]
 			self.activemax = j["activemax"]
-			self.pitchmin = j["pitchmin"]
-			self.pitchmax = j["pitchmax"]
+			self.valuemin = j["valuemin"]
+			self.valuemax = j["valuemax"]
 			self.threshold = j["threshold"]
 			self.scale = j["scale"]
 			self.isscaled = j["isscaled"]
@@ -68,10 +79,12 @@ class BehaviourSettings(object):    # inherit from object, make it a newstyle cl
 			f.write("{\n")
 			f.write("\"enabled\":%d,\n" % self.enabled)
 			f.write("\"attribute\":\"%s\",\n" % self.attribute)
+			f.write("\"actiontype\":\"%s\",\n" % self.actiontype)
+			f.write("\"source\":\"%s\",\n" % self.source)
 			f.write("\"activemin\":%d,\n" % self.activemin)
 			f.write("\"activemax\":%d,\n" % self.activemax)
-			f.write("\"pitchmin\":%d,\n" % self.pitchmin)
-			f.write("\"pitchmax\":%d,\n" % self.pitchmax)
+			f.write("\"valuemin\":%d,\n" % self.valuemin)
+			f.write("\"valuemax\":%d,\n" % self.valuemax)
 			f.write("\"threshold\":%f,\n" % self.threshold)
 			f.write("\"scale\":\"%s\",\n" % self.scale)
 			f.write("\"isscaled\":%d,\n" % self.isscaled)

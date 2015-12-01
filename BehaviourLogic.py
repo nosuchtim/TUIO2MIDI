@@ -69,23 +69,13 @@ class BehaviourLogic(object):    # inherit from object, make it a newstyle class
 		d = abs(self.getVal(state1) - self.getVal(self.sidstate))
 		return d
 
-	def playnote(self):
+	def playnote(self,pitch,velocity):
 
 		if self.player == None:
 			print "Behaviour.playnote called with player==None?"
 			return
 
 		s = self.settings
-		amin = s.activemin / 100.0
-		amax = s.activemax / 100.0
-		val = self.getVal(self.sidstate)
-		if val < amin:
-			return
-		if val > amax:
-			return
-		dpitch = s.pitchmax - s.pitchmin
-		pitch = s.pitchmin + dpitch * (val - amin) / (amax - amin)
-		pitch = int(pitch) # should this be rounded?
 		if s.isscaled:
 			if self.scalenotes == None:
 				print "Hey, scalenotes is None?"
@@ -112,6 +102,27 @@ class BehaviourLogic(object):    # inherit from object, make it a newstyle class
 
 		if self.player.verbose > 0:
 			print "playnote pitch=",pitch," dur=",dur," chan=",ch," tm=",(tm-self.player.time0)
+
+	def playcontroller(self,value,ctrl):
+
+		if self.player == None:
+			print "Behaviour.playcontroller called with player==None?"
+			return
+
+		s = self.settings
+
+		now = time.time()
+		ch = s.channel
+
+		msg = Controller( controller=ctrl, channel=ch, value=value)
+		n = SequencedMidiMsg(msg)
+		if self.player.midiout:
+			self.player.midiout.schedule(n, time=now)
+		else:
+			print("No MIDI output, trying to play controller=%d value=%d chan=%d" % (ctrl,value,ch))
+
+		if self.player.verbose > 0:
+			print "playcontroller ctrl=",ctrl," val=",value," chan=",ch," now=",(now-self.player.time0)
 
 
 class AttributeBehaviour(BehaviourLogic):
@@ -148,4 +159,29 @@ class AttributeBehaviour(BehaviourLogic):
 		return state.z
 
 	def doAction(self):
-		self.playnote()
+
+		s = self.settings
+
+		amin = s.activemin / 100.0
+		amax = s.activemax / 100.0
+		val = self.getVal(self.sidstate)
+		# See if we're in an active part
+		if val < amin:
+			return
+		if val > amax:
+			return
+
+		dval = s.valuemax - s.valuemin
+		value = s.valuemin + dval * (val - amin) / (amax - amin)
+		value = int(value) # should this be rounded?
+
+		a = self.settings.actiontype
+		if a == "Note":
+			self.playnote(value,self.settings.velocity)
+		elif a == "Note (Velocity=Depth)":
+			self.playnote(value,self.settings.z)
+		elif a.find("Controller ") == 0:
+			ctrl = int(a[11:])
+			self.playcontroller(value,ctrl)
+		else:
+			print "Unknown actiontype=",self.settings.actiontype

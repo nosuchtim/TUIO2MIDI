@@ -56,8 +56,6 @@ class Panel(QtGui.QGroupBox):
 		self.helpwindow = None
 		self.settingsname = settingsname
 
-		self.label_top = self.just_label("")
-
 		self.label_message = QtGui.QLabel("")
 
 		self.label_title = QtGui.QLabel("TUIO2MIDI  ")
@@ -82,11 +80,23 @@ class Panel(QtGui.QGroupBox):
 		self.spinbox_tuioport.setSingleStep(1)
 		self.spinbox_tuioport.valueChanged[int].connect(self.change_tuioport)
 
+		self.label_source = self.just_label("Source")
+		self.text_source = QtGui.QLineEdit()
+		self.text_source.textChanged.connect(self.change_source)
+
 		self.label_attribute = self.just_label("Attribute")
 		self.combo_attribute = QtGui.QComboBox()
 		for s in Attribute.order:
 			self.combo_attribute.addItem(s)
 		self.combo_attribute.activated[str].connect(self.change_attribute)
+
+		self.label_actiontype = self.just_label("Action")
+		self.combo_actiontype = QtGui.QComboBox()
+		self.combo_actiontype.addItem("Note")
+		# self.combo_actiontype.addItem("Note (Velocity=Depth)")
+		for i in range(0,128):
+			self.combo_actiontype.addItem("Controller %d" % i)
+		self.combo_actiontype.activated[str].connect(self.change_actiontype)
 
 		self.label_scale = self.just_label("Scale")
 		self.combo_scale = QtGui.QComboBox()
@@ -142,8 +152,6 @@ class Panel(QtGui.QGroupBox):
 		self.spinbox_velocity.setSingleStep(1)
 		self.spinbox_velocity.valueChanged.connect(self.change_velocity)
 
-		self.label_blankheader = self.just_label("---------------------------------------------------------------")
-
 		self.label_enabled = self.just_label("Enabled")
 		self.checkbox_enabled = QtGui.QCheckBox()
 		self.checkbox_enabled.stateChanged[int].connect(self.change_enabled)
@@ -164,14 +172,14 @@ class Panel(QtGui.QGroupBox):
 		self.checkbox_isscaled = QtGui.QCheckBox()
 		self.checkbox_isscaled.stateChanged[int].connect(self.change_isscaled)
 
-		self.label_pitchmin = self.just_label("Pitch Min")
+		self.label_pitchmin = self.just_label("Pitch/Val Min")
 		self.spinbox_pitchmin = QtGui.QSpinBox()
 		self.spinbox_pitchmin.setRange(0, 120)
 		self.spinbox_pitchmin.setSingleStep(1)
 		self.spinbox_pitchmin.valueChanged[int].connect(self.change_pitchmin)
 		# self.spinbox_pitchmin.valueChanged.connect(self.change_pitchmin)
 
-		self.label_pitchmax = self.just_label("Pitch Max")
+		self.label_pitchmax = self.just_label("Pitch/Val Max")
 		self.spinbox_pitchmax = QtGui.QSpinBox()
 		self.spinbox_pitchmax.setRange(10, 128)
 		self.spinbox_pitchmax.setSingleStep(1)
@@ -190,117 +198,142 @@ class Panel(QtGui.QGroupBox):
 		self.spinbox_activemax.setSingleStep(1)
 		self.spinbox_activemax.valueChanged[int].connect(self.change_activemax)
 
-		layout = QtGui.QGridLayout()
+		layout_master = QtGui.QGridLayout()
+		layout_title = QtGui.QGridLayout()
+		layout_globals = QtGui.QGridLayout()
+		layout_settings = QtGui.QGridLayout()
 
-		ncols = 4
-		row = 0
+		#######################################
 
-		layout2 = QtGui.QGridLayout()
+		layout_title.addWidget(self.label_title, 0, 0, 1, 1)
 
-		layout2.addWidget(self.label_title, 0, 0, 1, 1)
-
-		self.open_button = QtGui.QPushButton("Open Settings")
+		self.open_button = QtGui.QPushButton("Open Settings Directory")
 		self.open_button.clicked.connect(self.do_open)
-		layout2.addWidget(self.open_button, 0, 2, 1, 1)
-
-		layout.addLayout(layout2, 0, 0, 1, 3)
+		# layout_title.addWidget(self.open_button, 0, 2, 1, 1)
 
 		# self.help_button = QtGui.QPushButton("Help")
 		# self.help_button.clicked.connect(self.do_help)
 		# layout.addWidget(self.help_button, row, 3, 1, 1)
 
-		row += 1
-		layout.addWidget(self.label_top, row, 0, 1, ncols)
+		#######################################
+
+		row = 0
+		ncols = 4
 
 		row += 1
+		layout_globals.addWidget(self.just_label(" "), row, 0, 1, ncols)
 
-		layout.addWidget(self.label_settingsname, row, 1, 1, 1)
-		layout.addWidget(self.combo_settingsname, row, 2, 1, 1)
+		row += 1
+		layout_globals.addWidget(self.open_button, row, 1, 1, 2)
+
+		row += 1
+		layout_globals.addWidget(self.just_label(" "), row, 0, 1, ncols)
+
+		row += 1
+		layout_globals.addWidget(self.label_settingsname, row, 1, 1, 1, QtCore.Qt.AlignTop)
+		layout_globals.addWidget(self.combo_settingsname, row, 2, 1, 1, QtCore.Qt.AlignTop)
 
 		row += 1
 
-		layout.addWidget(self.label_tuioport, row, 1, 1, 1)
-		layout.addWidget(self.spinbox_tuioport, row, 2, 1, 1)
+		layout_globals.addWidget(self.label_tuioport, row, 1, 1, 1, QtCore.Qt.AlignTop)
+		layout_globals.addWidget(self.spinbox_tuioport, row, 2, 1, 1, QtCore.Qt.AlignTop)
 
 		row += 1
-		layout.addWidget(self.label_midiin, row, 1, 1, 1)
-		layout.addWidget(self.combo_midiin, row, 2, 1, 1)
+		layout_globals.addWidget(self.label_midiin, row, 1, 1, 1, QtCore.Qt.AlignTop)
+		layout_globals.addWidget(self.combo_midiin, row, 2, 1, 1, QtCore.Qt.AlignTop)
 
 		row += 1
-		layout.addWidget(self.label_midiout, row, 1, 1, 1)
-		layout.addWidget(self.combo_midiout, row, 2, 1, 1)
+		layout_globals.addWidget(self.label_midiout, row, 1, 1, 1, QtCore.Qt.AlignTop)
+		layout_globals.addWidget(self.combo_midiout, row, 2, 1, 1, QtCore.Qt.AlignTop)
 
 		row += 1
-		layout.addWidget(self.label_verbose, row, 1, 1, 1)
-		layout.addWidget(self.spinbox_verbose, row, 2, 1, 1)
+		layout_globals.addWidget(self.label_verbose, row, 1, 1, 1, QtCore.Qt.AlignTop)
+		layout_globals.addWidget(self.spinbox_verbose, row, 2, 1, 1, QtCore.Qt.AlignTop)
+
+		#######################################
 
 		row += 1
-		layout.addWidget(self.label_blankheader, row, 0, 1, ncols)
+		layout_settings.addWidget(self.label_behaviour, row, 1, 1, 1)
+		layout_settings.addWidget(self.combo_behaviour, row, 2, 1, 1)
 
 		row += 1
-		layout.addWidget(self.label_behaviour, row, 1, 1, 1)
-		layout.addWidget(self.combo_behaviour, row, 2, 1, 1)
+		layout_settings.addWidget(self.label_enabled, row, 1, 1, 1)
+		layout_settings.addWidget(self.checkbox_enabled, row, 2, 1, 1)
 
 		row += 1
-		layout.addWidget(self.label_enabled, row, 1, 1, 1)
-		layout.addWidget(self.checkbox_enabled, row, 2, 1, 1)
+		layout_settings.addWidget(self.label_source, row, 1, 1, 1)
+		layout_settings.addWidget(self.text_source, row, 2, 1, 1)
 
 		row += 1
-		layout.addWidget(self.label_attribute, row, 1, 1, 1)
-		layout.addWidget(self.combo_attribute, row, 2, 1, 1)
+		layout_settings.addWidget(self.label_actiontype, row, 1, 1, 1)
+		layout_settings.addWidget(self.combo_actiontype, row, 2, 1, 1)
 
 		row += 1
-		layout.addWidget(self.label_activemin, row, 1, 1, 1)
-		layout.addWidget(self.spinbox_activemin, row, 2, 1, 1)
+		layout_settings.addWidget(self.label_attribute, row, 1, 1, 1)
+		layout_settings.addWidget(self.combo_attribute, row, 2, 1, 1)
 
 		row += 1
-		layout.addWidget(self.label_activemax, row, 1, 1, 1)
-		layout.addWidget(self.spinbox_activemax, row, 2, 1, 1)
+		layout_settings.addWidget(self.label_activemin, row, 1, 1, 1)
+		layout_settings.addWidget(self.spinbox_activemin, row, 2, 1, 1)
 
 		row += 1
-		layout.addWidget(self.label_thresh, row, 1, 1, 1)
-		layout.addWidget(self.spinbox_thresh, row, 2, 1, 1)
+		layout_settings.addWidget(self.label_activemax, row, 1, 1, 1)
+		layout_settings.addWidget(self.spinbox_activemax, row, 2, 1, 1)
 
 		row += 1
-		layout.addWidget(self.label_channel, row, 1, 1, 1)
-		layout.addWidget(self.spinbox_channel, row, 2, 1, 1)
+		layout_settings.addWidget(self.label_thresh, row, 1, 1, 1)
+		layout_settings.addWidget(self.spinbox_thresh, row, 2, 1, 1)
 
 		row += 1
-		layout.addWidget(self.label_pitchmin, row, 1, 1, 1)
-		layout.addWidget(self.spinbox_pitchmin, row, 2, 1, 1)
+		layout_settings.addWidget(self.label_channel, row, 1, 1, 1)
+		layout_settings.addWidget(self.spinbox_channel, row, 2, 1, 1)
 
 		row += 1
-		layout.addWidget(self.label_pitchmax, row, 1, 1, 1)
-		layout.addWidget(self.spinbox_pitchmax, row, 2, 1, 1)
+		layout_settings.addWidget(self.label_pitchmin, row, 1, 1, 1)
+		layout_settings.addWidget(self.spinbox_pitchmin, row, 2, 1, 1)
 
 		row += 1
-		layout.addWidget(self.label_isscaled, row, 1, 1, 1)
-		layout.addWidget(self.checkbox_isscaled, row, 2, 1, 1)
+		layout_settings.addWidget(self.label_pitchmax, row, 1, 1, 1)
+		layout_settings.addWidget(self.spinbox_pitchmax, row, 2, 1, 1)
 
 		row += 1
-		layout.addWidget(self.label_scale, row, 1, 1, 1)
-		layout.addWidget(self.combo_scale, row, 2, 1, 1)
+		layout_settings.addWidget(self.label_isscaled, row, 1, 1, 1)
+		layout_settings.addWidget(self.checkbox_isscaled, row, 2, 1, 1)
 
 		row += 1
-		layout.addWidget(self.label_key, row, 1, 1, 1)
-		layout.addWidget(self.combo_key, row, 2, 1, 1)
+		layout_settings.addWidget(self.label_scale, row, 1, 1, 1)
+		layout_settings.addWidget(self.combo_scale, row, 2, 1, 1)
 
 		row += 1
-		layout.addWidget(self.label_quant, row, 1, 1, 1)
-		layout.addWidget(self.combo_quant, row, 2, 1, 1)
+		layout_settings.addWidget(self.label_key, row, 1, 1, 1)
+		layout_settings.addWidget(self.combo_key, row, 2, 1, 1)
 
 		row += 1
-		layout.addWidget(self.label_duration, row, 1, 1, 1)
-		layout.addWidget(self.combo_duration, row, 2, 1, 1)
+		layout_settings.addWidget(self.label_quant, row, 1, 1, 1)
+		layout_settings.addWidget(self.combo_quant, row, 2, 1, 1)
 
 		row += 1
-		layout.addWidget(self.label_velocity, row, 1, 1, 1)
-		layout.addWidget(self.spinbox_velocity, row, 2, 1, 1)
+		layout_settings.addWidget(self.label_duration, row, 1, 1, 1)
+		layout_settings.addWidget(self.combo_duration, row, 2, 1, 1)
 
 		row += 1
-		layout.addWidget(self.label_message, row, 0, 1, ncols)
+		layout_settings.addWidget(self.label_velocity, row, 1, 1, 1)
+		layout_settings.addWidget(self.spinbox_velocity, row, 2, 1, 1)
 
-		self.setLayout(layout)
+		row += 1
+		layout_settings.addWidget(self.label_message, row, 0, 1, ncols)
+
+		#########################################
+
+		layout_master.addLayout(layout_title, 0, 0, 1, 1)
+		layout_master.addLayout(layout_globals, 1, 0, 1, 1)
+
+		layout_master.addWidget(self.just_label("       "), 0, 1, 1, 1)
+
+		layout_master.addLayout(layout_settings, 0, 2, 3, 1)
+		layout_master.setAlignment(layout_settings, QtCore.Qt.AlignTop)
+
+		self.setLayout(layout_master)
 
 	def init_combo_behaviour(self):
 		self.combo_behaviour.clear()
@@ -389,10 +422,12 @@ class Panel(QtGui.QGroupBox):
 
 	def applySettings(self,s,gui):
 		self.change_attribute(s.attribute,gui)
+		self.change_actiontype(s.actiontype,gui)
+		self.change_source(s.source,gui)
 		self.change_activemin(s.activemin,gui)
 		self.change_activemax(s.activemax,gui)
-		self.change_pitchmin(s.pitchmin,gui)
-		self.change_pitchmax(s.pitchmax,gui)
+		self.change_pitchmin(s.valuemin,gui)
+		self.change_pitchmax(s.valuemax,gui)
 		self.change_threshold(s.threshold,gui)
 		self.change_isscaled(s.isscaled,gui)
 		self.change_channel(s.channel,gui)
@@ -488,6 +523,18 @@ class Panel(QtGui.QGroupBox):
 			self.combo_key.setCurrentIndex(ix)
 			self.write_settings()
 
+	####### Source
+
+	def change_source(self, val, gui=True):
+		val = str(val)
+		self.player.set_source(val)
+		self.panelsettings.source = val
+		if self.currbehaviour:
+			self.player.behaviours[self.currbehaviour].settings = self.panelsettings
+		if gui:
+			self.text_source.setText(val)
+			self.write_settings()
+
 	####### Attribute
 
 	def change_attribute(self, val, gui=True):
@@ -500,6 +547,20 @@ class Panel(QtGui.QGroupBox):
 			for ix in range(0, self.combo_attribute.count()):
 				if val == self.combo_attribute.itemText(ix):
 					self.combo_attribute.setCurrentIndex(ix)
+					self.write_settings()
+
+	####### ActionType
+
+	def change_actiontype(self, val, gui=True):
+		val = str(val)
+		self.player.set_actiontype(val)
+		self.panelsettings.actiontype = val
+		if self.currbehaviour:
+			self.player.behaviours[self.currbehaviour].settings = self.panelsettings
+		if gui:
+			for ix in range(0, self.combo_actiontype.count()):
+				if val == self.combo_actiontype.itemText(ix):
+					self.combo_actiontype.setCurrentIndex(ix)
 					self.write_settings()
 
 	####### Threshold
@@ -558,7 +619,7 @@ class Panel(QtGui.QGroupBox):
 
 	def change_pitchmin(self, val, gui=True):
 		self.player.set_pitchmin(val)
-		self.panelsettings.pitchmin = val
+		self.panelsettings.valuemin = val
 		if gui:
 			self.spinbox_pitchmin.setValue(val)
 			self.write_settings()
@@ -567,7 +628,7 @@ class Panel(QtGui.QGroupBox):
 
 	def change_pitchmax(self, val, gui=True):
 		self.player.set_pitchmax(val)
-		self.panelsettings.pitchmax = val
+		self.panelsettings.valuemax = val
 		if gui:
 			self.spinbox_pitchmax.setValue(val)
 			self.write_settings()
