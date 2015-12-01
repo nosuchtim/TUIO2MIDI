@@ -7,7 +7,7 @@ from Panel import *
 
 class Widget(QtGui.QWidget):
 
-	def __init__(self,player,settingsname):
+	def __init__(self,player,globals):
 
 		super(Widget, self).__init__()
 		
@@ -17,7 +17,7 @@ class Widget(QtGui.QWidget):
 		x, y, w, h = 100, 200, 100, 100
 		self.setGeometry(x, y, w, h)
 
-		self.panel = Panel(player,settingsname)
+		self.panel = Panel(player,globals)
 
 		self.layout = QtGui.QHBoxLayout()
 		self.layout.addWidget(self.panel)

@@ -26,6 +26,7 @@
     <Compile Include="BehaviourLogic.py" />
     <Compile Include="BehaviourSettings.py" />
     <Compile Include="Duration.py" />
+    <Compile Include="GlobalSettings.py" />
     <Compile Include="Key.py" />
     <Compile Include="Panel.py" />
     <Compile Include="Player.py" />

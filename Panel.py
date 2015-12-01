@@ -9,6 +9,7 @@ except ImportError:
 from Attribute import *
 from Duration import *
 from Scale import *
+from GlobalSettings import *
 from BehaviourLogic import *
 from BehaviourSettings import *
 from Key import *
@@ -46,15 +47,15 @@ class HelpPopup(QtGui.QWidget):
 
 class Panel(QtGui.QGroupBox):
 
-	def __init__(self,player,settingsname):
+	def __init__(self,player,globals):
 		super(Panel, self).__init__("")
 
+		self.globals = globals
 		self.write_file_onchange = False
 		self.currbehaviour = None
 		self.panelsettings = BehaviourSettings()
 		self.player = player
 		self.helpwindow = None
-		self.settingsname = settingsname
 
 		self.label_message = QtGui.QLabel("")
 
@@ -79,6 +80,13 @@ class Panel(QtGui.QGroupBox):
 		self.spinbox_tuioport.setRange(3333, 9999)
 		self.spinbox_tuioport.setSingleStep(1)
 		self.spinbox_tuioport.valueChanged[int].connect(self.change_tuioport)
+
+		self.label_depthmult = self.just_label("Depth Multiplier")
+		self.spinbox_depthmult = QtGui.QDoubleSpinBox()
+		self.spinbox_depthmult.setRange(0.1, 3.0)
+		self.spinbox_depthmult.setSingleStep(0.1)
+		self.spinbox_depthmult.valueChanged.connect(self.change_depthmult)
+		self.spinbox_depthmult.setValue(self.globals.depthmult)
 
 		self.label_source = self.just_label("Source")
 		self.text_source = QtGui.QLineEdit()
@@ -132,6 +140,7 @@ class Panel(QtGui.QGroupBox):
 			self.combo_midiin.addItem(s)
 		self.combo_midiin.addItem("None")
 		self.combo_midiin.activated[str].connect(self.change_midiin)
+		self.change_midiin(self.globals.midiin)
 
 		self.label_midiout = self.just_label("Midi Output")
 		self.combo_midiout = QtGui.QComboBox()
@@ -139,6 +148,7 @@ class Panel(QtGui.QGroupBox):
 			self.combo_midiout.addItem(s)
 		self.combo_midiout.addItem("None")
 		self.combo_midiout.activated[str].connect(self.change_midiout)
+		self.change_midiout(self.globals.midiout)
 
 		self.label_thresh = self.just_label("Active Move%")
 		self.spinbox_thresh = QtGui.QSpinBox()
@@ -161,6 +171,7 @@ class Panel(QtGui.QGroupBox):
 		self.spinbox_verbose.setRange(0, 2)
 		self.spinbox_verbose.setSingleStep(1)
 		self.spinbox_verbose.valueChanged[int].connect(self.change_verbose)
+		self.spinbox_verbose.setValue(self.globals.verbose)
 		
 		self.label_channel = self.just_label("Channel")
 		self.spinbox_channel = QtGui.QSpinBox()
@@ -172,6 +183,10 @@ class Panel(QtGui.QGroupBox):
 		self.checkbox_isscaled = QtGui.QCheckBox()
 		self.checkbox_isscaled.stateChanged[int].connect(self.change_isscaled)
 
+		self.label_depthvol = self.just_label("Depth=Vol")
+		self.checkbox_depthvol = QtGui.QCheckBox()
+		self.checkbox_depthvol.stateChanged[int].connect(self.change_depthvol)
+
 		self.label_pitchmin = self.just_label("Pitch/Val Min")
 		self.spinbox_pitchmin = QtGui.QSpinBox()
 		self.spinbox_pitchmin.setRange(0, 120)
@@ -181,7 +196,7 @@ class Panel(QtGui.QGroupBox):
 
 		self.label_pitchmax = self.just_label("Pitch/Val Max")
 		self.spinbox_pitchmax = QtGui.QSpinBox()
-		self.spinbox_pitchmax.setRange(10, 128)
+		self.spinbox_pitchmax.setRange(10, 127)
 		self.spinbox_pitchmax.setSingleStep(1)
 		self.spinbox_pitchmax.valueChanged[int].connect(self.change_pitchmax)
 
@@ -234,9 +249,12 @@ class Panel(QtGui.QGroupBox):
 		layout_globals.addWidget(self.combo_settingsname, row, 2, 1, 1, QtCore.Qt.AlignTop)
 
 		row += 1
-
 		layout_globals.addWidget(self.label_tuioport, row, 1, 1, 1, QtCore.Qt.AlignTop)
 		layout_globals.addWidget(self.spinbox_tuioport, row, 2, 1, 1, QtCore.Qt.AlignTop)
+
+		row += 1
+		layout_globals.addWidget(self.label_depthmult, row, 1, 1, 1, QtCore.Qt.AlignTop)
+		layout_globals.addWidget(self.spinbox_depthmult, row, 2, 1, 1, QtCore.Qt.AlignTop)
 
 		row += 1
 		layout_globals.addWidget(self.label_midiin, row, 1, 1, 1, QtCore.Qt.AlignTop)
@@ -321,6 +339,10 @@ class Panel(QtGui.QGroupBox):
 		layout_settings.addWidget(self.spinbox_velocity, row, 2, 1, 1)
 
 		row += 1
+		layout_settings.addWidget(self.label_depthvol, row, 1, 1, 1)
+		layout_settings.addWidget(self.checkbox_depthvol, row, 2, 1, 1)
+
+		row += 1
 		layout_settings.addWidget(self.label_message, row, 0, 1, ncols)
 
 		#########################################
@@ -337,26 +359,26 @@ class Panel(QtGui.QGroupBox):
 
 	def init_combo_behaviour(self):
 		self.combo_behaviour.clear()
-		for i in self.player.behaviournames:
-			if self.currbehaviour == None:
-				self.currbehaviour = i
-			self.combo_behaviour.addItem(i)
-		self.combo_behaviour.activated[str].connect(self.change_behaviour)
+		if self.player.behaviournames:
+			for i in self.player.behaviournames:
+				if self.currbehaviour == None:
+					self.currbehaviour = i
+				self.combo_behaviour.addItem(i)
+			self.combo_behaviour.activated[str].connect(self.change_behaviour)
 
 	def init_combo_settingsname(self):
 		self.combo_settingsname.clear()
-		dir = BehaviourSettings.settings_parentdir()
+		dir = self.globals.settings_dir()
 		settingsnames = [f.replace(".json","") for f in os.listdir(dir) if os.path.isdir(os.path.join(dir,f)) ]
 		settingsnames.sort()
 		ix = 0
 		for i in settingsnames:
 			self.combo_settingsname.addItem(i)
-			if i == "current":
-				current_ix = ix
+			if self.globals.settingsname == i:
+				self.combo_settingsname.setCurrentIndex(ix)
+				# ix = i
 			ix += 1
-		self.combo_settingsname.activated[str].connect(self.change_settingsname)
-		self.settingsname = "current"
-		self.combo_settingsname.setCurrentIndex(current_ix)
+		# self.combo_settingsname.activated[str].connect(self.change_settingsname)
 
 	def just_label(self, s):
 		# in case the label Alignment needs to be changed
@@ -372,7 +394,8 @@ class Panel(QtGui.QGroupBox):
 		self.helpwindow.show()
 
 	def do_open(self):
-		os.system("start %s" % BehaviourSettings.settings_parentdir())
+		# the quotes around the title (\"Settings\") are important
+		os.system("start \"Settings\" explorer \"%s\"" % self.globals.settings_dir())
 
 	def close_help(self):
 		if self.helpwindow:
@@ -381,18 +404,31 @@ class Panel(QtGui.QGroupBox):
 	def set_message(self, msg):
 		self.label_message.setText(msg)
 
-	def change_settingsname(self):
-		self.settingsname = str(self.combo_settingsname.currentText())
-		self.player.init_settings(self.settingsname)
+	def change_settingsname(self, val, gui=True):
+		val = str(val)
+		self.globals.settingsname = val
+		self.player.init_settings(val)
 		self.currbehaviour = None
 		self.init_combo_behaviour()
 		if self.currbehaviour:
 			self.change_behaviour(self.currbehaviour, True)
+			self.globals.write()
 
-	def change_tuioport(self, val):
-		# print "Panel.change_tuioport val=",val
-		self.spinbox_tuioport.setValue(val)
-		self.player.set_tuioport(val)
+		# self.update_scalenotes()
+
+	def change_tuioport(self, val, gui=True):
+		val = int(val)
+		self.globals.tuioport = val
+		if gui:
+			self.spinbox_tuioport.setValue(val)
+			self.globals.write()
+
+	def change_depthmult(self, val, gui=True):
+		val = float(val)
+		self.globals.depthmult = val
+		if gui:
+			self.spinbox_depthmult.setValue(val)
+			self.globals.write()
 
 	####### Behaviour
 
@@ -400,7 +436,8 @@ class Panel(QtGui.QGroupBox):
 		# print "Panel.change_behaviour=",val," gui=",gui
 		val = str(val)
 		self.currbehaviour = val
-		fname = BehaviourSettings.behaviour_filename(self.settingsname,val)
+		dn = self.globals.settings_dir(self.globals.settingsname)
+		fname = os.path.join(dn,val+".json")
 		self.panelsettings = BehaviourSettings(fname)
 		self.applySettings(self.panelsettings,gui=gui)
 		self.player.behaviours[val].settings = self.panelsettings
@@ -418,7 +455,16 @@ class Panel(QtGui.QGroupBox):
 			return
 		bn = str(self.combo_behaviour.currentText())
 		self.player.behaviours[bn].settings = self.panelsettings
-		self.panelsettings.write_behaviour(self.settingsname,bn)
+		dn = self.globals.settings_dir(self.globals.settingsname)
+		# Make sure the directory exists
+		try:
+			os.stat(dn)
+		except:
+			# directory doesn't exist, probably
+			os.makedirs(dn)
+
+		fname = os.path.join(dn,bn+".json")
+		self.panelsettings.write_behaviour(fname)
 
 	def applySettings(self,s,gui):
 		self.change_attribute(s.attribute,gui)
@@ -430,6 +476,7 @@ class Panel(QtGui.QGroupBox):
 		self.change_pitchmax(s.valuemax,gui)
 		self.change_threshold(s.threshold,gui)
 		self.change_isscaled(s.isscaled,gui)
+		self.change_depthvol(s.depthvol,gui)
 		self.change_channel(s.channel,gui)
 		self.change_duration(s.duration,gui)
 		self.change_enabled(s.enabled,gui)
@@ -441,8 +488,10 @@ class Panel(QtGui.QGroupBox):
 	####### Midi Input
 
 	def change_midiin(self, val):
+		self.midiin = val
 		if not self.player.open_midiin(val):
 			self.combo_midiin.setCurrentIndex(self.indexof_midiin("None"))
+			self.midiin = "None"
 		else:
 			i = self.indexof_midiin(val)
 			self.combo_midiin.setCurrentIndex(i)
@@ -455,12 +504,17 @@ class Panel(QtGui.QGroupBox):
 
 	####### Midi Output
 
-	def change_midiout(self, val):
+	def change_midiout(self, val, gui=True):
+		val = str(val)
 		if not self.player.open_midiout(val):
-			self.combo_midiout.setCurrentIndex(self.indexof_midiout("None"))
+			if gui:
+				self.combo_midiout.setCurrentIndex(self.indexof_midiout("None"))
+				self.midiout = "None"
 		else:
 			i = self.indexof_midiout(val)
 			self.combo_midiout.setCurrentIndex(i)
+			self.globals.midiout = val
+			self.globals.write()
 
 	def indexof_midiout(self, name):
 		# Assumes that None is after all midioutputs
@@ -497,6 +551,7 @@ class Panel(QtGui.QGroupBox):
 	####### Scale
 
 	def update_scalenotes(self):
+		# print "UPDATE_SCALENOTES!  for self=",self," currbehaviour=",self.currbehaviour
 		self.player.behaviours[self.currbehaviour].update_scalenotes()
 
 	def change_scale(self, val, gui=True):
@@ -566,7 +621,7 @@ class Panel(QtGui.QGroupBox):
 	####### Threshold
 
 	def change_threshold(self, val, gui=True):
-		self.player.set_threshold(val)
+		# self.player.set_threshold(val)
 		self.panelsettings.threshold = val
 		if gui:
 			self.spinbox_thresh.setValue(val)
@@ -593,9 +648,10 @@ class Panel(QtGui.QGroupBox):
 	####### Verbose
 
 	def change_verbose(self, val, gui=True):
-		self.player.verbose = val
+		self.globals.verbose = val
 		if gui:
 			self.spinbox_verbose.setValue(val)
+			self.globals.write()
 
 	####### Channel
 
@@ -613,6 +669,15 @@ class Panel(QtGui.QGroupBox):
 		self.panelsettings.isscaled = val
 		if gui:
 			self.checkbox_isscaled.setChecked(val)
+			self.write_settings()
+
+	####### DepthVol
+
+	def change_depthvol(self, val, gui=True):
+		self.player.set_depthvol(val)
+		self.panelsettings.depthvol = val
+		if gui:
+			self.checkbox_depthvol.setChecked(val)
 			self.write_settings()
 
 	####### Pitchmin

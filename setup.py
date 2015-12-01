@@ -1,4 +1,4 @@
 from distutils.core import setup
 import py2exe
 
-setup(console=['midifingers.py'])
+setup(console=['tuio2midi.py'])

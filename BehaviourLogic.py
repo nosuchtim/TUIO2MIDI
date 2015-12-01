@@ -16,6 +16,7 @@ class BehaviourLogic(object):    # inherit from object, make it a newstyle class
 		self.first = True
 		self.settings = settings
 		self.scalenotes = None
+		self.update_scalenotes()
 
 	def update_scalenotes(self):
 		keyindex = Key.names.index(self.settings.key)
@@ -78,7 +79,7 @@ class BehaviourLogic(object):    # inherit from object, make it a newstyle class
 		s = self.settings
 		if s.isscaled:
 			if self.scalenotes == None:
-				print "Hey, scalenotes is None?"
+				print "Hey, scalenotes is None? self=",self
 				return
 			pitch = self.scalenotes[pitch]
 
@@ -93,6 +94,13 @@ class BehaviourLogic(object):    # inherit from object, make it a newstyle class
 		ch = s.channel
 		vel = s.velocity
 
+		if self.settings.depthvol:
+			d = self.getValDepth(self.sidstate)
+			d = int(d*127.0)
+			d = d % 128
+			# print "DEPTHVOL d=",d
+			self.playcontroller(d,7)
+
 		durclocks = Midi.clocks_per_second * dur
 		n = SequencedNote(pitch=pitch, duration=durclocks, channel=ch, velocity=vel)
 		if self.player.midiout:
@@ -100,7 +108,7 @@ class BehaviourLogic(object):    # inherit from object, make it a newstyle class
 		else:
 			print("No MIDI output, trying to play pitch=%d channel=%d velocity=%d" % (n.pitch, n.channel, n.velocity))
 
-		if self.player.verbose > 0:
+		if self.player.globals.verbose > 0:
 			print "playnote pitch=",pitch," dur=",dur," chan=",ch," tm=",(tm-self.player.time0)
 
 	def playcontroller(self,value,ctrl):
@@ -121,7 +129,7 @@ class BehaviourLogic(object):    # inherit from object, make it a newstyle class
 		else:
 			print("No MIDI output, trying to play controller=%d value=%d chan=%d" % (ctrl,value,ch))
 
-		if self.player.verbose > 0:
+		if self.player.globals.verbose > 0:
 			print "playcontroller ctrl=",ctrl," val=",value," chan=",ch," now=",(now-self.player.time0)
 
 
@@ -138,7 +146,7 @@ class AttributeBehaviour(BehaviourLogic):
 		else:
 			v = getattr(state,attrname)
 
-		if self.player.verbose > 1:
+		if self.player.globals.verbose > 1:
 			print "Value of %s is %.3f" % (self.settings.attribute,v)
 
 		return v
@@ -156,7 +164,7 @@ class AttributeBehaviour(BehaviourLogic):
 		return state.x - (state.w/2.0)
 
 	def getValDepth(self,state):
-		return state.z
+		return state.z * self.player.globals.depthmult
 
 	def doAction(self):
 

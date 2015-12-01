@@ -8,7 +8,7 @@ from nosuch.midipypm import *
 
 class BehaviourSettings(object):    # inherit from object, make it a newstyle class
 
-	def __init__(self, fname=None, j=None):
+	def __init__(self, fname=None, j=None, globals=None):
 		if fname:
 			try:
 				f = open(fname)
@@ -43,34 +43,17 @@ class BehaviourSettings(object):    # inherit from object, make it a newstyle cl
 			self.threshold = j["threshold"]
 			self.scale = j["scale"]
 			self.isscaled = j["isscaled"]
+			if not "depthvol" in j:
+				self.depthvol = 0
+			else:
+				self.depthvol = 2
 			self.key = j["key"]
 			self.channel = j["channel"]
 			self.duration = j["duration"]
 			self.quant = j["quant"]
 			self.velocity = j["velocity"]
 
-	@staticmethod
-	def settings_parentdir():
-		return "Settings"
-
-	@staticmethod
-	def settings_dir(settingsname):
-		return os.path.join(BehaviourSettings.settings_parentdir(),settingsname)
-
-	@staticmethod
-	def behaviour_filename(settingsname,behaviourname):
-		return "%s/%s.json" % (BehaviourSettings.settings_dir(settingsname),behaviourname)
-
-	def write_behaviour(self,settingsname,behaviourname):
-		# Make sure directory exists
-		dn = BehaviourSettings.settings_dir(settingsname)
-		try:
-			os.stat(dn)
-		except:
-			# directory doesn't exist, probably
-			os.makedirs(dn)
-
-		fname = self.behaviour_filename(settingsname,behaviourname)
+	def write_behaviour(self,fname):
 		try:
 			f = open(fname,"w")
 			if not f:
@@ -88,6 +71,7 @@ class BehaviourSettings(object):    # inherit from object, make it a newstyle cl
 			f.write("\"threshold\":%f,\n" % self.threshold)
 			f.write("\"scale\":\"%s\",\n" % self.scale)
 			f.write("\"isscaled\":%d,\n" % self.isscaled)
+			f.write("\"depthvol\":%d,\n" % self.depthvol)
 			f.write("\"key\":\"%s\",\n" % self.key)
 			f.write("\"channel\":%d,\n" % self.channel)
 			f.write("\"duration\":\"%s\",\n" % self.duration)

@@ -8,6 +8,7 @@ from nosuch.midipypm import *
 from Sid import *
 from BehaviourLogic import *
 from BehaviourSettings import *
+from GlobalSettings import *
 from Quant import *
 from Scale import *
 from Key import *
@@ -15,12 +16,12 @@ from Duration import *
 
 class Player():
 
-	def __init__(self,settingsname):
+	def __init__(self, globals):
 
+		self.globals = globals
 		self.sids = {}   # index is sid name, value is SidInstance
 
 		self.panel = None
-		self.verbose = 0
 		self.midinotesdown = 0
 
 		self.midi = MidiPypmHardware()
@@ -33,17 +34,17 @@ class Player():
 
 		Midi.callback(self.midicallback, "")
 
-		self.init_settings(settingsname)
+		self.init_settings(globals.settingsname)
 
 	def init_settings(self,settingsname):
-		dir = BehaviourSettings.settings_dir(settingsname)
+		dir = self.globals.settings_dir(settingsname)
 		try:
 			os.stat(dir)
 		except:
 			# directory doesn't exist?
 			os.makedirs(dir)
 			# Copy stuff from "current" settings
-			currentdir = BehaviourSettings.settings_dir("current")
+			currentdir = self.globals.settings_dir("current")
 			for fn in os.listdir(currentdir):
 				src = os.path.join(currentdir,fn)
 				dst = os.path.join(dir,fn)
@@ -55,13 +56,14 @@ class Player():
 
 		self.behaviours = {}
 		for b in self.behaviournames:
-			fn = BehaviourSettings.behaviour_filename(settingsname,b)
+			fn = os.path.join(self.globals.settings_dir(settingsname),b+".json")
 			bs = BehaviourSettings(fn)     # load settings from file
 			# print "Creating behaviour named '%s' in '%s' settings" % (b,settingsname)
 			self.behaviours[b] = AttributeBehaviour(self,bs)
 
 	def set_message(self, msg):
-		self.panel.set_message(msg)
+		if self.panel:
+			self.panel.set_message(msg)
 
 	def set_panel(self,panel):
 		self.panel = panel
@@ -76,19 +78,19 @@ class Player():
 			p = Program(channel=ch, program=prog)
 			self.midiout.schedule(p)
 
-	def set_tuioport(self, port):
-		# print "Player.set_tuioport ",port
-		# self.panel.change_tuioport(port)
-		pass
+	# def set_tuioport(self, port):
+	# 	print "Player.set_tuioport ",port
+	# 	# self.panel.change_tuioport(port)
+	# 	pass
+# 
+	# def set_midiout(self, name):
+	#	 self.open_midiout(name)
+#
+	#def set_midiin(self, name):
+	#	self.open_midiin(name)
 
-	def set_midiout(self, name):
-		self.open_midiout(name)
-
-	def set_midiin(self, name):
-		self.open_midiin(name)
-
-	def set_threshold(self, v):
-		self.threshold = v
+	# def set_threshold(self, v):
+	# 	self.threshold = v
 
 	def set_velocity(self, v):
 		self.velocity = v
@@ -101,6 +103,9 @@ class Player():
 
 	def set_isscaled(self, v):
 		self.isscaled = v
+
+	def set_depthvol(self, v):
+		self.depthvol = v
 
 	def set_pitchmin(self, v):
 		self.pitchmin = v
@@ -199,7 +204,7 @@ class Player():
 	# 	self.panel.close_help()
 
 	def midicallback(self, msg, data):
-		if self.verbose:
+		if self.globals.verbose:
 			print("MIDI INPUT = %s" % str(msg))
 		m = msg.midimsg
 

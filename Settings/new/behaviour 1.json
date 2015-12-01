@@ -1,6 +1,8 @@
 {
 "enabled":0,
 "attribute":"Left",
+"actiontype":"Note",
+"source":"",
 "activemin":0,
 "activemax":100,
 "valuemin":60,
