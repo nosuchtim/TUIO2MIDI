@@ -1,8 +1,8 @@
 ﻿2015-11-22 02:02:09|       9.48.1.5805|      298256|-R-S|c:\Program Files\InstallMate 9\Stubs80\Tsu32u.dll
-2015-12-01 14:29:12|                  |      283440|-R-S|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\installer\tuio2midi\TUIO2MIDI\TUIO2MIDI-Setup.dat
-2015-12-01 14:29:13|                  |       85504|-R-S|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\installer\tuio2midi\TUIO2MIDI\TUIO2MIDI-Setup32.dll
+2015-12-01 14:35:29|                  |      283440|-R-S|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\installer\tuio2midi\TUIO2MIDI\TUIO2MIDI-Setup.dat
+2015-12-01 14:35:29|                  |       85504|-R-S|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\installer\tuio2midi\TUIO2MIDI\TUIO2MIDI-Setup32.dll
 2013-11-23 16:15:11|                  |        4846|-R-S|c:\Program Files\InstallMate 9\Data\Resources\Generic.ico
-2015-12-01 14:29:13|                  |        2053|-R-S|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\installer\tuio2midi\TUIO2MIDI\Readme.txt
+2015-12-01 14:35:29|                  |        2053|-R-S|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\installer\tuio2midi\TUIO2MIDI\Readme.txt
 2015-11-22 02:02:05|       9.48.1.5805|       17168|-R-S|c:\Program Files\InstallMate 9\Stubs80\Setup.Administrator\Setup32u.exe
 2008-06-12 17:01:56|                  |       51712|----|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\tuio2midi\tcl\tk8.5\demos\images\earth.gif
 2008-06-12 17:01:56|                  |       11000|----|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\tuio2midi\tcl\tk8.5\images\logoLarge.gif
@@ -69,7 +69,7 @@
 2009-07-15 09:58:00|                  |       22016|----|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\tuio2midi\portmidi.dll
 2012-02-02 19:17:20|                  |       22016|----|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\tuio2midi\pygame.image.pyd
 2012-02-02 19:16:16|                  |       21504|----|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\tuio2midi\pygame._numericsurfarray.pyd
-2015-12-01 14:29:11|                  |       19968|----|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\tuio2midi\tuio2midi.exe
+2015-12-01 14:35:27|                  |       19968|----|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\tuio2midi\tuio2midi.exe
 2012-02-02 19:16:40|                  |       19456|----|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\tuio2midi\pygame.event.pyd
 2012-02-02 19:16:34|                  |       16896|----|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\tuio2midi\pygame.cdrom.pyd
 2012-02-02 19:16:12|                  |       16896|----|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\tuio2midi\pygame.font.pyd
@@ -91,7 +91,7 @@
 2012-02-02 19:17:28|                  |        9216|----|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\tuio2midi\pygame.bufferproxy.pyd
 2012-02-02 19:17:20|                  |        9216|----|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\tuio2midi\pygame.overlay.pyd
 2012-02-02 19:17:12|                  |        8192|----|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\tuio2midi\pygame.surflock.pyd
-2015-12-01 14:29:11|                  |     8149222|----|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\tuio2midi\library.zip
+2015-12-01 14:35:27|                  |     8149222|----|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\tuio2midi\library.zip
 2008-06-12 17:01:22|                  |      132509|----|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\tuio2midi\tcl\tcl8.5\encoding\cp936.enc
 2008-06-12 17:01:22|                  |      130423|----|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\tuio2midi\tcl\tcl8.5\encoding\cp949.enc
 2008-06-12 17:01:22|                  |      128892|----|c:\Users\tjt\Documents\GitHub\TUIO2MIDI\tuio2midi\tcl\tcl8.5\clock.tcl
